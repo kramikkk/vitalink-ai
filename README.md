@@ -52,7 +52,7 @@ To provide **real-time health and activity monitoring** for students, enabling e
 Here’s the overall system flow of the project:
 
 <p align="center">
-  <img src="./docs/flowchart.png" alt="System Flowchart" width="250">
+  <img src="./docs/Flowchart.png" alt="System Flowchart" width="250">
 </p>
 
 

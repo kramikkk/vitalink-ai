@@ -13,7 +13,7 @@ export function UserCards() {
   return (
     <div className="grid gap-4
                 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3
-                px-4 lg:px-6
+                px-0 lg:px-0
                 *:data-[slot=card]:bg-gradient-to-t
                 *:data-[slot=card]:from-primary/5
                 *:data-[slot=card]:to-card

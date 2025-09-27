@@ -15,6 +15,8 @@ import {
 import Link from "next/link"
 import Image from "next/image"
 import { NavUser } from "./NavUser"
+import { studentMenu, teacherMenu } from "@/lib/menu";
+
 
 const data = {
   user: {
@@ -22,36 +24,10 @@ const data = {
     email: "m@example.com",
     avatar: "/avatars/shadcn.jpg",
   },
-  navMain: [
-  {
-    title: "Dashboard",
-    url: "#",
-    icon: Home,
-  },
-  {
-    title: "My Vitals",
-    url: "#",
-    icon: Heart,
-  },
-  {
-    title: "History",
-    url: "#",
-    icon: Calendar,
-  },
-  {
-    title: "Alerts",
-    url: "#",
-    icon: TrendingUp,
-  },
-  {
-    title: "Settings",
-    url: "#",
-    icon: Settings,
-  },
-  ],
 }
 
-export function AppSidebar() {
+export function AppSidebar({ role }: { role: "student" | "teacher" }) {
+  const menu = role === "teacher" ? teacherMenu : studentMenu;
   return (
     <Sidebar collapsible="offcanvas">
         <SidebarHeader className="py-4">
@@ -71,7 +47,7 @@ export function AppSidebar() {
                 <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
                     <SidebarGroupContent>
                     <SidebarMenu>
-                        {data.navMain.map((item) => {
+                        {menu.map((item) => {
                         const Icon = item.icon;
                         return (
                             <SidebarMenuItem key={item.title}>

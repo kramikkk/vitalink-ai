@@ -86,7 +86,7 @@ export function UserCards() {
       </Card>
 
       {/* Card 3 */}
-      <Card className="@container/card relative overflow-hidden col-span-2 sm:col-span-1">
+      <Card className="@container/card relative overflow-hidden col-span-2">
         <CardHeader className="flex flex-col sm:flex-row items-start gap-2">
           <div className="flex-1 min-w-0">
             <CardDescription className="truncate">Stress Level</CardDescription>

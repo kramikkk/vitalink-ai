@@ -13,7 +13,7 @@ export default async function DashboardLayout({
   return (
     <div className="flex min-h-screen">
       <SidebarProvider defaultOpen={defaultOpen}>
-      <AppSidebar />
+      <AppSidebar role="student"/>
       <main className="flex-1 w-full">
         <NavBar />
         <div className="px-4">{children}</div>

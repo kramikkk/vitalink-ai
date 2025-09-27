@@ -29,7 +29,7 @@ const data = {
 export function AppSidebar({ role }: { role: "student" | "teacher" }) {
   const menu = role === "teacher" ? teacherMenu : studentMenu;
   return (
-    <Sidebar collapsible="offcanvas">
+    <Sidebar collapsible="offcanvas" variant="sidebar">
         <SidebarHeader className="py-4">
             <SidebarMenu>
             <SidebarMenuItem>

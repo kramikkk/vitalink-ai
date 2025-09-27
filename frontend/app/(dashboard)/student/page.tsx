@@ -1,5 +1,6 @@
 import { UserCards } from "@/components/UserCards"
 import { AppAreaChart } from "@/components/AppAreaChart"
+import { AlertCards } from "@/components/AlertCards"
 
 const page = () => {
   return (
@@ -12,7 +13,7 @@ const page = () => {
 
   {/* RIGHT */}
   <div className="w-full lg:w-1/3 min-w-0">
-    RIGHT
+    <AlertCards />
   </div>
 </div>
 

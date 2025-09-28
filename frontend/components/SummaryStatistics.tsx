@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select"
 import { Activity, Calendar, Heart } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { WellnessScore } from "./WellnessScore"
 
 const SummaryStatistics = () => {
   return (
@@ -25,7 +26,7 @@ const SummaryStatistics = () => {
           <Calendar className="w-5 h-5" />
           <CardTitle>Summary Statistics</CardTitle>
         </div>
-        <CardDescription>Daily Summary</CardDescription>
+        <CardDescription>Updated 5 mins ago</CardDescription>
         <CardAction>
             <Select>
                 <SelectTrigger className="w-[105px]">
@@ -40,6 +41,7 @@ const SummaryStatistics = () => {
         </CardAction>
       </CardHeader>
       <CardContent className="space-y-4">
+        <WellnessScore />
         {/* Stress Level */}
         <Card>
           <CardContent className="space-y-4">
@@ -144,10 +146,6 @@ const SummaryStatistics = () => {
           </Card>
         </div>
       </CardContent>
-
-      <CardFooter>
-        <p className="text-xs md:text-sm text-muted-foreground">Updated 5mins ago</p>
-      </CardFooter>
     </Card>
   )
 }

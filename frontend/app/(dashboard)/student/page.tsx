@@ -1,6 +1,7 @@
 import { UserCards } from "@/components/UserCards"
 import { AppAreaChart } from "@/components/AppAreaChart"
 import { AlertCards } from "@/components/AlertCards"
+import SummaryStatistics from "@/components/SummaryStatistics"
 
 const page = () => {
   return (
@@ -12,8 +13,9 @@ const page = () => {
   </div>
 
   {/* RIGHT */}
-  <div className="w-full lg:w-1/3 min-w-0">
+  <div className="w-full lg:w-1/3 min-w-0 flex flex-col gap-4">
     <AlertCards />
+    <SummaryStatistics />
   </div>
 </div>
 

@@ -1,55 +1,69 @@
+import React from 'react';
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Activity, Calendar, Heart } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { WellnessScore } from "./WellnessScore"
+} from "@/components/ui/select";
+import { Activity, Brain, Calendar, Heart, RefreshCw } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 const SummaryStatistics = () => {
   return (
-    <Card>
+    <Card className="shadow-sm">
       <CardHeader>
-        <div className="flex items-center gap-2">
-          <Calendar className="w-5 h-5" />
-          <CardTitle>Summary Statistics</CardTitle>
-        </div>
-        <CardDescription>Updated 5 mins ago</CardDescription>
-        <CardAction>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-muted rounded-lg">
+              <Calendar className="w-5 h-5 text-muted-foreground" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">Summary Statistics</CardTitle>
+              <CardDescription className="flex items-center gap-1.5 mt-0.5">
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                Updated 5 mins ago
+              </CardDescription>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
             <Select>
-                <SelectTrigger className="w-[105px]">
-                    <SelectValue placeholder="Daily" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="Daily">Daily</SelectItem>
-                    <SelectItem value="Weekly">Weekly</SelectItem>
-                    <SelectItem value="Monthly">Monthly</SelectItem>
-                </SelectContent>
+              <SelectTrigger className="w-[105px] h-8">
+                <SelectValue placeholder="Daily" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Daily">Daily</SelectItem>
+                <SelectItem value="Weekly">Weekly</SelectItem>
+                <SelectItem value="Monthly">Monthly</SelectItem>
+              </SelectContent>
             </Select>
-        </CardAction>
+          </div>
+        </div>
       </CardHeader>
+      
       <CardContent className="space-y-4">
-        <WellnessScore />
         {/* Stress Level */}
-        <Card>
+        <Card className="border shadow-none bg-muted/20">
           <CardContent className="space-y-4">
             {/* Header */}
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
-                <Activity className="w-6 h-6 text-orange-600" />
-                <CardTitle className="text-sm md:text-base">Stress Level</CardTitle>
+                <div className="p-1.5 rounded-lg">
+                  <Brain className="w-6 h-6 text-orange-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-sm md:text-base">Stress Level</CardTitle>
+                  <p className="text-xs text-muted-foreground">Overall wellness</p>
+                </div>
               </div>
               <Badge
                 variant="outline"
@@ -62,16 +76,19 @@ const SummaryStatistics = () => {
             {/* Stats */}
             <div className="flex justify-between w-full text-center">
               <div className="flex-1">
-                <p className="text-xs md:text-sm text-muted-foreground">Avg</p>
-                <p className="font-semibold">30%</p>
+                <p className="text-xs md:text-sm text-muted-foreground mb-1">Average</p>
+                <p className="font-semibold text-lg">30%</p>
+                <p className="text-xs text-green-600">↓ 2% today</p>
               </div>
               <div className="flex-1">
-                <p className="text-xs md:text-sm text-muted-foreground">Peak</p>
-                <p className="font-semibold text-red-600">70%</p>
+                <p className="text-xs md:text-sm text-muted-foreground mb-1">Peak</p>
+                <p className="font-semibold text-lg text-red-600">70%</p>
+                <p className="text-xs text-muted-foreground">3:30 PM</p>
               </div>
               <div className="flex-1">
-                <p className="text-xs md:text-sm text-muted-foreground">Lowest</p>
-                <p className="font-semibold text-blue-600">10%</p>
+                <p className="text-xs md:text-sm text-muted-foreground mb-1">Lowest</p>
+                <p className="font-semibold text-lg text-blue-600">10%</p>
+                <p className="text-xs text-muted-foreground">7:00 AM</p>
               </div>
             </div>
           </CardContent>
@@ -80,12 +97,17 @@ const SummaryStatistics = () => {
         {/* Metrics grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 2xl:grid-cols-2 gap-4">
           {/* Heart Rate */}
-          <Card>
+          <Card className="border shadow-none">
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2">
-                  <Heart className="w-5 h-5 text-red-600" />
-                  <CardTitle className="text-sm md:text-base">Heart Rate</CardTitle>
+                  <div className="p-1.5 rounded-lg">
+                    <Heart className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-sm md:text-base">Heart Rate</CardTitle>
+                    <p className="text-xs text-muted-foreground">BPM monitoring</p>
+                  </div>
                 </div>
                 <Badge
                   variant="outline"
@@ -97,28 +119,36 @@ const SummaryStatistics = () => {
 
               <div className="flex justify-between w-full text-center">
                 <div className="flex-1">
-                  <p className="text-xs md:text-sm text-muted-foreground">Avg</p>
-                  <p className="font-semibold">75</p>
+                  <p className="text-xs md:text-sm text-muted-foreground mb-1">Average</p>
+                  <p className="font-semibold text-lg">75</p>
+                  <p className="text-xs text-muted-foreground">bpm</p>
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs md:text-sm text-muted-foreground">Peak</p>
-                  <p className="font-semibold text-red-600">120</p>
+                  <p className="text-xs md:text-sm text-muted-foreground mb-1">Peak</p>
+                  <p className="font-semibold text-lg text-red-600">120</p>
+                  <p className="text-xs text-muted-foreground">bpm</p>
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs md:text-sm text-muted-foreground">Lowest</p>
-                  <p className="font-semibold text-blue-600">60</p>
+                  <p className="text-xs md:text-sm text-muted-foreground mb-1">Resting</p>
+                  <p className="font-semibold text-lg text-blue-600">60</p>
+                  <p className="text-xs text-muted-foreground">bpm</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Activity Level */}
-          <Card>
+          <Card className="border shadow-none">
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-blue-600" />
-                  <CardTitle className="text-sm md:text-base">Activity Level</CardTitle>
+                  <div className="p-1.5 rounded-lg">
+                    <Activity className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-sm md:text-base">Activity Level</CardTitle>
+                    <p className="text-xs text-muted-foreground">Daily movement</p>
+                  </div>
                 </div>
                 <Badge
                   variant="outline"
@@ -130,16 +160,19 @@ const SummaryStatistics = () => {
 
               <div className="flex justify-between w-full text-center">
                 <div className="flex-1">
-                  <p className="text-xs md:text-sm text-muted-foreground">Avg</p>
-                  <p className="font-semibold">65%</p>
+                  <p className="text-xs md:text-sm text-muted-foreground mb-1">Average</p>
+                  <p className="font-semibold text-lg">65%</p>
+                  <p className="text-xs text-blue-600">+8% week</p>
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs md:text-sm text-muted-foreground">Peak</p>
-                  <p className="font-semibold text-orange-600">92%</p>
+                  <p className="text-xs md:text-sm text-muted-foreground mb-1">Peak</p>
+                  <p className="font-semibold text-lg text-orange-600">92%</p>
+                  <p className="text-xs text-muted-foreground">today</p>
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs md:text-sm text-muted-foreground">Lowest</p>
-                  <p className="font-semibold text-blue-600">20%</p>
+                  <p className="text-xs md:text-sm text-muted-foreground mb-1">Minimum</p>
+                  <p className="font-semibold text-lg text-blue-600">20%</p>
+                  <p className="text-xs text-muted-foreground">rest</p>
                 </div>
               </div>
             </CardContent>
@@ -147,7 +180,7 @@ const SummaryStatistics = () => {
         </div>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
-export default SummaryStatistics
+export default SummaryStatistics;

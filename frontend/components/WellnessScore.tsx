@@ -88,7 +88,7 @@ export function WellnessScore() {
                           y={(viewBox.cy || 0) + 24}
                           className="fill-muted-foreground"
                         >
-                          Score
+                          Bad!
                         </tspan>
                       </text>
                     )

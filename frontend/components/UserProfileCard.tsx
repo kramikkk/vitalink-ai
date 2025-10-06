@@ -13,12 +13,12 @@ import { Mail, Phone, User, Edit, User2 } from 'lucide-react'
 export default function UserProfileCard() {
   const [mounted, setMounted] = useState(false)
   const [studentData, setStudentData] = useState({
-    username: 'emma.johnson',
-    name: 'Emma Johnson',
-    email: 'emma.johnson@school.edu',
-    phone: '+1 (555) 987-6543',
-    schoolId: 'ST2024001',
-    emergencyContact: '+1 (555) 123-4567'
+    username: 'kramik',
+    name: 'Mark Jeric Exconde',
+    email: '0322-3614@lspu.edup.ph',
+    phone: '09490508940',
+    schoolId: '0322-3614',
+    emergencyContact: '09347578322'
   })
 
   const [isOpen, setIsOpen] = useState(false)

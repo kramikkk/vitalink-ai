@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/select";
 import { Activity, Brain, Calendar, Heart, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 
 const SummaryStatistics = () => {
   return (
@@ -78,17 +77,14 @@ const SummaryStatistics = () => {
               <div className="flex-1">
                 <p className="text-xs md:text-sm text-muted-foreground mb-1">Average</p>
                 <p className="font-semibold text-lg">30%</p>
-                <p className="text-xs text-green-600">↓ 2% today</p>
               </div>
               <div className="flex-1">
                 <p className="text-xs md:text-sm text-muted-foreground mb-1">Peak</p>
                 <p className="font-semibold text-lg text-red-600">70%</p>
-                <p className="text-xs text-muted-foreground">3:30 PM</p>
               </div>
               <div className="flex-1">
                 <p className="text-xs md:text-sm text-muted-foreground mb-1">Lowest</p>
                 <p className="font-semibold text-lg text-blue-600">10%</p>
-                <p className="text-xs text-muted-foreground">7:00 AM</p>
               </div>
             </div>
           </CardContent>
@@ -121,17 +117,14 @@ const SummaryStatistics = () => {
                 <div className="flex-1">
                   <p className="text-xs md:text-sm text-muted-foreground mb-1">Average</p>
                   <p className="font-semibold text-lg">75</p>
-                  <p className="text-xs text-muted-foreground">bpm</p>
                 </div>
                 <div className="flex-1">
                   <p className="text-xs md:text-sm text-muted-foreground mb-1">Peak</p>
                   <p className="font-semibold text-lg text-red-600">120</p>
-                  <p className="text-xs text-muted-foreground">bpm</p>
                 </div>
                 <div className="flex-1">
                   <p className="text-xs md:text-sm text-muted-foreground mb-1">Resting</p>
                   <p className="font-semibold text-lg text-blue-600">60</p>
-                  <p className="text-xs text-muted-foreground">bpm</p>
                 </div>
               </div>
             </CardContent>
@@ -162,17 +155,14 @@ const SummaryStatistics = () => {
                 <div className="flex-1">
                   <p className="text-xs md:text-sm text-muted-foreground mb-1">Average</p>
                   <p className="font-semibold text-lg">65%</p>
-                  <p className="text-xs text-blue-600">+8% week</p>
                 </div>
                 <div className="flex-1">
                   <p className="text-xs md:text-sm text-muted-foreground mb-1">Peak</p>
                   <p className="font-semibold text-lg text-orange-600">92%</p>
-                  <p className="text-xs text-muted-foreground">today</p>
                 </div>
                 <div className="flex-1">
                   <p className="text-xs md:text-sm text-muted-foreground mb-1">Minimum</p>
                   <p className="font-semibold text-lg text-blue-600">20%</p>
-                  <p className="text-xs text-muted-foreground">rest</p>
                 </div>
               </div>
             </CardContent>

@@ -20,8 +20,8 @@ import { studentMenu, teacherMenu } from "@/lib/menu";
 
 const data = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
+    name: "Mark Jeric Exconde",
+    email: "0322-3614@lspu.edu.ph",
     avatar: "/avatars/shadcn.jpg",
   },
 }

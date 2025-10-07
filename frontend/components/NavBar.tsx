@@ -46,7 +46,7 @@ const NavBar = () => {
                         </DropdownMenuItem>
                     <DropdownMenuItem variant="destructive"> 
                         <LogOut className="h-[1.2rem] w-[1.2rem] mr-2"/> 
-                        Logout
+                        <Link href="/login">Logout</Link>
                         </DropdownMenuItem>
                 </DropdownMenuContent>
                 </DropdownMenu>

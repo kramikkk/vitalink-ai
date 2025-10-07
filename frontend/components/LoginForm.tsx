@@ -63,7 +63,9 @@ export function LoginForm({
                 <Input id="password" type="password" placeholder="Enter your password" required />
               </Field>
               <Field>
-                <Button type="submit">Login</Button>
+                <Button type="submit">
+                    <Link href="/student">Login</Link>
+                </Button>
               </Field>
               <FieldDescription className="text-center">
                 Don&apos;t have an account? <Link href="/register" className="underline-offset-2 hover:underline">Sign up</Link>

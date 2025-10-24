@@ -8,7 +8,7 @@ import Image from 'next/image'
 
 export default function FeaturesSection() {
     return (
-        <section className="px-4 py-16 md:py-32">
+        <section id="features" className="px-4 py-16 md:py-32">
             <div className="text-center">
                 <h2 className="text-balance text-4xl font-semibold lg:text-5xl">Built for Real-Time Health Insights</h2>
                 <p className="mt-4">From heart rate tracking to stress detection, VitaLink AI brings real-time health awareness to schools.</p>

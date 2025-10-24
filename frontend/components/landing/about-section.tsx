@@ -43,10 +43,10 @@ export default function AboutSection() {
                             <p className="text-sm italic">To create a healthier, smarter, and more connected learning environment where technology actively supports every student's physical and mental wellness.</p>
                         </CardContent>
                     </Card>
-
                 </div>
             </div>
         </section>
+       
     )
 }
 

@@ -4,6 +4,7 @@ import FeaturesSection from "@/components/landing/features-section"
 import FooterSection from "@/components/landing/footer"
 import HeroSection from "@/components/landing/hero-section"
 import LogoCloud from "@/components/landing/logo-cloud"
+import TeamSection from "@/components/landing/team"
 const LandingPage = () => {
   return (
     <div >
@@ -12,6 +13,7 @@ const LandingPage = () => {
       <FeaturesSection />
       <FAQs />
       <AboutSection />
+      <TeamSection />
       <FooterSection />
     </div>
   )

@@ -39,16 +39,7 @@ export const HeroHeader = () => {
                                 href="/"
                                 aria-label="home"
                                 className="flex items-center space-x-2">
-                                <Avatar>
-                                    <Image
-                                        src="/VitaLinkAILogo.png"
-                                        alt="VitaLink AI"
-                                        width={40}
-                                        height={40}
-                                        className="rounded-lg"
-                                    />
-                                </Avatar>
-                                <span className="font-bold text-lg">VitaLink AI</span>
+                                <Logo />
                             </Link>
 
                             <button

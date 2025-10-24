@@ -46,7 +46,7 @@ export default function FAQs() {
     ]
 
     return (
-        <section className="bg-muted dark:bg-background py-20">
+        <section id="faqs" className="bg-muted dark:bg-background py-20">
             <div className="mx-auto max-w-7xl px-4 md:px-6">
                 <div className="flex flex-col gap-10 md:flex-row md:gap-16">
                     <div className="md:w-1/3">

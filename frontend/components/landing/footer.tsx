@@ -3,28 +3,24 @@ import Link from 'next/link'
 
 const links = [
     {
+        title: 'Home',
+        href: '#home',
+    },
+    {
         title: 'Features',
-        href: '#',
+        href: '#features',
     },
     {
-        title: 'Solution',
-        href: '#',
-    },
-    {
-        title: 'Customers',
-        href: '#',
-    },
-    {
-        title: 'Pricing',
-        href: '#',
-    },
-    {
-        title: 'Help',
-        href: '#',
+        title: 'FAQs',
+        href: '#faqs',
     },
     {
         title: 'About',
-        href: '#',
+        href: '#about',
+    },
+    {
+        title: 'Team',
+        href: '#team',
     },
 ]
 
@@ -39,7 +35,7 @@ export default function FooterSection() {
                     <Logo />
                 </Link>
 
-                <div className="my-8 flex flex-wrap justify-center gap-6 text-sm">
+                <div className="my-8 flex flex-wrap justify-center gap-10 text-sm">
                     {links.map((link, index) => (
                         <Link
                             key={index}
@@ -158,7 +154,7 @@ export default function FooterSection() {
                         </svg>
                     </Link>
                 </div>
-                <span className="text-muted-foreground block text-center text-sm"> © {new Date().getFullYear()} Tailark, All rights reserved</span>
+                <span className="text-muted-foreground block text-center text-sm"> © {new Date().getFullYear()} VitaLink AI, All rights reserved</span>
             </div>
         </footer>
     )

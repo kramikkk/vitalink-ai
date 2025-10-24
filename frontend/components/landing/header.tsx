@@ -5,15 +5,15 @@ import { Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import React from 'react'
 import { cn } from '@/lib/utils'
-import Image from 'next/image'
-import { Avatar } from '../ui/avatar'
 import { ModeToggle } from '../ModeToggle'
+import { AnimatedThemeToggler } from '../ui/animated-theme-toggler'
 
 const menuItems = [
-    { name: 'Home', href: '#link' },
-    { name: 'Features', href: '#link' },
-    { name: 'FAQs', href: '#link' },
-    { name: 'About', href: '#link' },
+    { name: 'Home', href: '#home' },
+    { name: 'Features', href: '#features' },
+    { name: 'FAQs', href: '#faqs' },
+    { name: 'About', href: '#about' },
+    { name: 'Team', href: '#team' },
 ]
 
 export const HeroHeader = () => {
@@ -32,7 +32,7 @@ export const HeroHeader = () => {
             <nav
                 data-state={menuState && 'active'}
                 className="fixed z-20 w-full px-2">
-                <div className={cn('mx-auto mt-2 max-w-6xl px-6 transition-all duration-300 lg:px-12', isScrolled && 'bg-background/50 max-w-4xl rounded-2xl border backdrop-blur-lg lg:px-5')}>
+                <div className={cn('mx-auto mt-2 max-w-5xl px-6 transition-all duration-300 lg:px-12', isScrolled && 'bg-background/50 max-w-4xl rounded-2xl border backdrop-blur-lg lg:px-5')}>
                     <div className="relative flex flex-wrap items-center justify-between gap-6 py-3 lg:gap-0 lg:py-4">
                         <div className="flex w-full justify-between lg:w-auto">
                             <Link
@@ -97,7 +97,6 @@ export const HeroHeader = () => {
                                         <span>Sign Up</span>
                                     </Link>
                                 </Button>
-                                <ModeToggle />
                                 <Button
                                     asChild
                                     size="sm"
@@ -106,6 +105,7 @@ export const HeroHeader = () => {
                                         <span>Get Started</span>
                                     </Link>
                                 </Button>
+                                <AnimatedThemeToggler />
                             </div>
                         </div>
                     </div>

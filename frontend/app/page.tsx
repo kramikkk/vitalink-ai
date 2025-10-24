@@ -1,3 +1,4 @@
+import AboutSection from "@/components/landing/about-section"
 import FAQs from "@/components/landing/faqs-section"
 import FeaturesSection from "@/components/landing/features-section"
 import FooterSection from "@/components/landing/footer"
@@ -10,6 +11,7 @@ const LandingPage = () => {
       <LogoCloud />
       <FeaturesSection />
       <FAQs />
+      <AboutSection />
       <FooterSection />
     </div>
   )

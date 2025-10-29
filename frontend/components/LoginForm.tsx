@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
-import { Avatar, AvatarImage} from "./ui/avatar"
+import Image from "next/image"
 
 export function LoginForm({
   className,
@@ -22,20 +22,17 @@ export function LoginForm({
         <CardContent className="grid p-0 md:grid-cols-2">
 
           <div className="bg-muted relative hidden md:block">
-            <img
-              src="/VitaLinkAILogo.png"
+            <Image
+              src="/VitaLinkLogoCenter.png"
+              width={500}
+              height={500}
               alt="Image"
               className="absolute inset-0 h-full w-full object-cover"
             />
           </div>
-                    <form className="p-6 md:p-8">
-            <FieldGroup>
+            <form className="p-6 md:p-8">
+            <FieldGroup className="py-6">
               <div className="flex flex-col items-center gap-2 text-center">
-                <div className="pb-2">
-                    <Avatar className="size-20">
-                        <AvatarImage src="/VitaLinkAILogo.png" alt="VitaLink AI" />
-                    </Avatar>
-                </div>
                 <h1 className="text-2xl font-bold">Welcome back</h1>
                 <p className="text-muted-foreground text-balance">
                   Login to your VitaLink AI account

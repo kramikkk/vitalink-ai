@@ -5,12 +5,12 @@ import { Avatar } from '../ui/avatar'
 export const Logo = ({ className, uniColor }: { className?: string; uniColor?: boolean }) => {
     return (
         <div className={cn('flex items-center gap-2', className)}>
-            <Avatar>
+            <Avatar className='w-12 h-12'>
                 <Image
-                                        src="/VitaLinkAILogo.png"
+                                        src="/VitaLinkLogoCircleTrans.png"
                                         alt="VitaLink AI"
-                                        width={32}
-                                        height={32}
+                                        width={48}
+                                        height={48}
                                         className="rounded-lg"
                                     />
                                 </Avatar>

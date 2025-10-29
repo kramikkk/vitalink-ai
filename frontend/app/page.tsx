@@ -7,9 +7,8 @@ import LogoCloud from "@/components/landing/logo-cloud"
 import TeamSection from "@/components/landing/team"
 const LandingPage = () => {
   return (
-    <div >
+    <div>
       <HeroSection />
-      <LogoCloud />
       <FeaturesSection />
       <FAQs />
       <AboutSection />

@@ -5,7 +5,6 @@ import { Menu, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import React from 'react'
 import { cn } from '@/lib/utils'
-import { ModeToggle } from '../ModeToggle'
 import { AnimatedThemeToggler } from '../ui/animated-theme-toggler'
 
 const menuItems = [

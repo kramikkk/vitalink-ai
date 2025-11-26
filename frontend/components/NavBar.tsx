@@ -17,7 +17,10 @@ const NavBar = () => {
     <nav className="p-4 flex items-center justify-between">
       {/* LEFT SIDE */}
         <div className="flex items-center gap-4">
-            <SidebarTrigger />
+          <Avatar className="h-8 w-8">
+            <AvatarImage src="/VitaLinkLogoCircleTransparent.png" alt="VitaLink Logo" />
+            <AvatarFallback>VL</AvatarFallback>
+          </Avatar>
         <div className="w-px h-6 bg-border" />
         <Link href="/" className="font-bold">
           IoT Health & Activity Dashboard

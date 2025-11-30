@@ -79,8 +79,8 @@ export default function UserProfileCard() {
   }
 
   return (
-    <Card className="w-full mx-auto relative overflow-hidden">
-      <CardHeader className="pb-4">
+    <Card className="w-full mx-auto relative overflow-hidden h-full flex flex-col">
+      <CardHeader className="pb-4 flex-shrink-0">
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-4">
             <Avatar className="h-14 w-14">
@@ -172,7 +172,7 @@ export default function UserProfileCard() {
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3 flex-1">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Mail className="h-4 w-4" />
           <span>{studentData.email}</span>
@@ -186,9 +186,10 @@ export default function UserProfileCard() {
           <span>Emergency: {studentData.emergencyContact}</span>
         </div>
       </CardContent>
-        <div className="absolute bottom-0 right-0 pointer-events-none">
+      
+      <div className="absolute bottom-0 right-0 pointer-events-none">
         <User2
-          className="size-130 text-green-300 opacity-30 translate-x-1/3 translate-y-1/3"
+          className="size-120 text-green-300 opacity-30 translate-x-1/3 translate-y-1/3"
           strokeWidth={1}
         />
       </div>

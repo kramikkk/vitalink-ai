@@ -14,7 +14,7 @@ import { SidebarTrigger } from "./ui/sidebar"
 
 const NavBar = () => {
   return (
-    <nav className="p-4 flex items-center justify-between">
+    <nav className="p-4 flex items-center justify-between relative">
       {/* LEFT SIDE */}
         <div className="flex items-center gap-4">
           <Avatar className="h-8 w-8">
@@ -22,10 +22,10 @@ const NavBar = () => {
             <AvatarFallback>VL</AvatarFallback>
           </Avatar>
         <div className="w-px h-6 bg-border" />
-        <Link href="/" className="font-bold">
-          IoT Health & Activity Dashboard
+        <Link href="/" className="font-bold text-xl absolute left-1/2 -translate-x-1/2">
+          VitaLink AI
         </Link>
-      </div>
+        </div>
         {/*RIGHT SIDE*/}
         <div className="flex items-center gap-4">
             <ModeToggle />

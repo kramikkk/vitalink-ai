@@ -12,6 +12,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Search, ChevronsUpDown, Check } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 // Mock student data - replace with API call
 const students = [
@@ -39,6 +46,8 @@ const TeacherPage = () => {
 	const [selectedStudent, setSelectedStudent] = useState<string>(students[0].id)
 	const [searchQuery, setSearchQuery] = useState("")
 	const [open, setOpen] = useState(false)
+	const [selectedMetric, setSelectedMetric] = useState<"All" | "HeartRate" | "ActivityLevel" | "StressLevel">("All")
+	const [timeRange, setTimeRange] = useState("live")
 
 	const filteredStudents = students.filter(
 		(student) =>
@@ -54,7 +63,7 @@ const TeacherPage = () => {
 			<Card className="flex-shrink-0">
 				<CardHeader>
 					<div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-						<div className="flex-1">
+						<div className="flex-1 flex flex-col justify-center">
 							<CardTitle className="text-xl sm:text-2xl lg:text-3xl">
 								IoT Health & Activity Dashboard for Teacher
 							</CardTitle>
@@ -63,8 +72,42 @@ const TeacherPage = () => {
 							</CardDescription>
 						</div>
 
-						{/* Student Selector */}
-						<Popover open={open} onOpenChange={setOpen}>
+						<div className="flex flex-col lg:flex-row gap-4">
+							{/* Chart Filters */}
+							<div className="flex flex-col justify-between gap-2">
+								<label className="text-sm font-medium">Chart Filters</label>
+								<div className="flex flex-col sm:flex-row gap-2">
+									<Select value={selectedMetric} onValueChange={(val) => setSelectedMetric(val as any)}>
+										<SelectTrigger className="w-full sm:w-[180px] h-[80px]">
+											<SelectValue placeholder="Select metric" />
+										</SelectTrigger>
+										<SelectContent className="rounded-xl">
+											<SelectItem value="All">All Metrics</SelectItem>
+											<SelectItem value="HeartRate">Heart Rate</SelectItem>
+											<SelectItem value="ActivityLevel">Activity Level</SelectItem>
+											<SelectItem value="StressLevel">Stress Level</SelectItem>
+										</SelectContent>
+									</Select>
+							<Select value={timeRange} onValueChange={setTimeRange}>
+								<SelectTrigger className="w-full sm:w-[180px] h-[60px]">
+									<SelectValue placeholder="Time range" />
+								</SelectTrigger>
+								<SelectContent className="rounded-xl">
+									<SelectItem value="live">Live (seconds)</SelectItem>
+									<SelectItem value="1h">Last 1 hour</SelectItem>
+									<SelectItem value="24h">Last 24 hours</SelectItem>
+									<SelectItem value="7d">Last 7 days</SelectItem>
+									<SelectItem value="30d">Last 30 days</SelectItem>
+									<SelectItem value="12mo">Last 12 months</SelectItem>
+								</SelectContent>
+							</Select>
+								</div>
+							</div>
+
+							{/* Student Selector */}
+							<div className="flex flex-col justify-between gap-2">
+								<label className="text-sm font-medium">Select Student</label>
+								<Popover open={open} onOpenChange={setOpen}>
 							<PopoverTrigger asChild>
 								<Button
 									variant="outline"
@@ -154,14 +197,14 @@ const TeacherPage = () => {
 											No students found
 										</div>
 									)}
-								</div>
-							</PopoverContent>
-						</Popover>
-					</div>
-				</CardHeader>
-			</Card>
-
-			{/* Student Dashboard Content */}
+												</div>
+											</PopoverContent>
+										</Popover>
+									</div>
+							</div>
+						</div>
+					</CardHeader>
+				</Card>			{/* Student Dashboard Content */}
 			<div className="flex-1 flex gap-4 flex-col lg:flex-row items-stretch min-h-0 overflow-y-auto lg:overflow-hidden">
 				{/* LEFT */}
 				<div className="flex-1 min-w-0 flex flex-col gap-4 lg:min-h-0 lg:overflow-y-auto">
@@ -169,7 +212,7 @@ const TeacherPage = () => {
 						<UserCards />
 					</div>
 					<div className="flex-1 min-h-[400px]">
-						<AppAreaChart />
+						<AppAreaChart selectedMetric={selectedMetric} timeRange={timeRange} />
 					</div>
 				</div>
 

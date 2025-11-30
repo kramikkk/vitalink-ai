@@ -48,7 +48,7 @@ const NavBar = () => {
           <AvatarFallback>VL</AvatarFallback>
         </Avatar>
         <div className="w-px h-6 bg-border" />
-        <Link href="/" className="font-bold text-xl absolute left-1/2 -translate-x-1/2">
+        <Link href="#" className="font-bold text-xl absolute left-1/2 -translate-x-1/2">
           VitaLink AI
         </Link>
       </div>

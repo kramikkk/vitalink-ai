@@ -1,19 +1,64 @@
+"use client"
+
+import { useState } from "react"
 import { UserCards } from "@/components/UserCards"
 import { AppAreaChart } from "@/components/AppAreaChart"
 import AlertCards from "@/components/AlertCards"
 import UserProfileCard from "@/components/UserProfileCard"
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 const page = () => {
+  const [selectedMetric, setSelectedMetric] = useState<"All" | "HeartRate" | "ActivityLevel" | "StressLevel">("All")
+  const [timeRange, setTimeRange] = useState("90d")
+
   return (
     <div className="min-h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)] pb-4 flex flex-col gap-4 overflow-y-auto lg:overflow-hidden">
       {/* Header Section */}
       <Card className="flex-shrink-0">
         <CardHeader>
-          <CardTitle className="text-xl sm:text-2xl lg:text-3xl">IoT Health & Activity Dashboard for Students</CardTitle>
-          <CardDescription className="text-sm sm:text-base">
-            Monitor your health metrics and activity levels in real-time
-          </CardDescription>
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+            <div className="flex-1">
+              <CardTitle className="text-xl sm:text-2xl lg:text-3xl">IoT Health & Activity Dashboard for Students</CardTitle>
+              <CardDescription className="text-sm sm:text-base">
+                Monitor your health metrics and activity levels in real-time
+              </CardDescription>
+            </div>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium">Chart Filters</label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Select value={selectedMetric} onValueChange={(val) => setSelectedMetric(val as any)}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Select metric" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="All">All Metrics</SelectItem>
+                      <SelectItem value="HeartRate">Heart Rate</SelectItem>
+                      <SelectItem value="ActivityLevel">Activity Level</SelectItem>
+                      <SelectItem value="StressLevel">Stress Level</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={timeRange} onValueChange={setTimeRange}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Time range" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="90d">Last 3 months</SelectItem>
+                      <SelectItem value="30d">Last 30 days</SelectItem>
+                      <SelectItem value="7d">Last 7 days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          </div>
         </CardHeader>
       </Card>
 
@@ -27,7 +72,7 @@ const page = () => {
           </div>
           {/* AppAreaChart fills remaining space */}
           <div className="flex-1 min-h-[400px]">
-            <AppAreaChart />
+            <AppAreaChart selectedMetric={selectedMetric} timeRange={timeRange} />
           </div>
         </div>
 

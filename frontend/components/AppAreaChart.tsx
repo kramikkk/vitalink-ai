@@ -145,26 +145,25 @@ const chartConfig = {
 } satisfies ChartConfig
 
 export function AppAreaChart() {
-    const [selectedMetric, setSelectedMetric] = React.useState<"All" | "HeartRate" | "ActivityLevel" | "StressLevel">("All")
+  const [selectedMetric, setSelectedMetric] = React.useState<"All" | "HeartRate" | "ActivityLevel" | "StressLevel">("All")
   const [timeRange, setTimeRange] = React.useState("90d")
 
-const filteredData = chartData.filter((item) => {
-  const date = new Date(item.date)
-  const referenceDate = new Date(
-    Math.max(...chartData.map((d) => new Date(d.date).getTime()))
-  )
-  let daysToSubtract = 90
-  if (timeRange === "30d") daysToSubtract = 30
-  else if (timeRange === "7d") daysToSubtract = 7
-  const startDate = new Date(referenceDate)
-  startDate.setDate(startDate.getDate() - daysToSubtract)
-  return date >= startDate
-})
-
+  const filteredData = chartData.filter((item) => {
+    const date = new Date(item.date)
+    const referenceDate = new Date(
+      Math.max(...chartData.map((d) => new Date(d.date).getTime()))
+    )
+    let daysToSubtract = 90
+    if (timeRange === "30d") daysToSubtract = 30
+    else if (timeRange === "7d") daysToSubtract = 7
+    const startDate = new Date(referenceDate)
+    startDate.setDate(startDate.getDate() - daysToSubtract)
+    return date >= startDate
+  })
 
   return (
-    <Card className="pt-0">
-      <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
+    <Card className="h-full flex flex-col">
+      <CardHeader className="flex-shrink-0 flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
         <div className="grid flex-1 gap-1">
           <CardTitle>Wellness Trend Chart</CardTitle>
           <CardDescription>
@@ -172,15 +171,15 @@ const filteredData = chartData.filter((item) => {
           </CardDescription>
         </div>
         <Select value={selectedMetric} onValueChange={(val) => setSelectedMetric(val as any)}>
-            <SelectTrigger className="rounded-lg sm:ml-4">
-                <SelectValue placeholder="Select metric" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-                <SelectItem value="All">All</SelectItem>
-                <SelectItem value="HeartRate">Heart Rate</SelectItem>
-                <SelectItem value="ActivityLevel">Activity Level</SelectItem>
-                <SelectItem value="StressLevel">Stress Level</SelectItem>
-            </SelectContent>
+          <SelectTrigger className="rounded-lg sm:ml-4">
+            <SelectValue placeholder="Select metric" />
+          </SelectTrigger>
+          <SelectContent className="rounded-xl">
+            <SelectItem value="All">All</SelectItem>
+            <SelectItem value="HeartRate">Heart Rate</SelectItem>
+            <SelectItem value="ActivityLevel">Activity Level</SelectItem>
+            <SelectItem value="StressLevel">Stress Level</SelectItem>
+          </SelectContent>
         </Select>
         <Select value={timeRange} onValueChange={setTimeRange}>
           <SelectTrigger
@@ -202,10 +201,10 @@ const filteredData = chartData.filter((item) => {
           </SelectContent>
         </Select>
       </CardHeader>
-      <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+      <CardContent className="flex-1 px-2 pt-4 sm:px-6 sm:pt-6 min-h-0">
         <ChartContainer
           config={chartConfig}
-          className="aspect-auto h-[250px] w-full"
+          className="h-full w-full"
         >
           <AreaChart data={filteredData}>
             <defs>

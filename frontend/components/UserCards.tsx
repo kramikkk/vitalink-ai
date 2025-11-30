@@ -17,15 +17,9 @@ export function UserCards() {
         <CardHeader className="flex flex-col sm:flex-row items-start gap-2 flex-1">
           <div className="flex-1 min-w-0">
             <CardDescription className="truncate">Heart Rate</CardDescription>
-            <CardTitle className="text-2xl font-semibold tabular-nums whitespace-nowrap mb-2 sm:mb-0">
+            <CardTitle className="text-2xl lg:text-3xl font-semibold tabular-nums whitespace-nowrap mb-2 sm:mb-0">
               72 BPM
             </CardTitle>
-            <div className="sm:hidden">
-              <Badge variant="outline" className="whitespace-nowrap">
-                <TrendingUp className="mr-1" />
-                +12.5%
-              </Badge>
-            </div>
           </div>
           <div className="hidden sm:block">
             <CardAction className="flex-shrink-0">
@@ -54,15 +48,9 @@ export function UserCards() {
         <CardHeader className="flex flex-col sm:flex-row items-start gap-2 flex-1">
           <div className="flex-1 min-w-0">
             <CardDescription className="truncate">Activity Level</CardDescription>
-            <CardTitle className="text-2xl font-semibold tabular-nums truncate mb-2 sm:mb-0">
+            <CardTitle className="text-2xl lg:text-3xl font-semibold tabular-nums truncate mb-2 sm:mb-0">
               58%
             </CardTitle>
-            <div className="sm:hidden">
-              <Badge variant="outline" className="whitespace-nowrap">
-                <TrendingDown className="mr-1" />
-                -20%
-              </Badge>
-            </div>
           </div>
           <div className="hidden sm:block">
             <CardAction className="flex-shrink-0">
@@ -88,15 +76,9 @@ export function UserCards() {
         <CardHeader className="flex flex-col sm:flex-row items-start gap-2 flex-1">
           <div className="flex-1 min-w-0">
             <CardDescription className="truncate">Stress Level</CardDescription>
-            <CardTitle className="text-2xl font-semibold tabular-nums truncate mb-2 sm:mb-0">
+            <CardTitle className="text-2xl lg:text-3xl font-semibold tabular-nums truncate mb-2 sm:mb-0">
               21%
             </CardTitle>
-            <div className="sm:hidden">
-              <Badge variant="outline" className="whitespace-nowrap">
-                <TrendingUp className="mr-1" />
-                +1.5%
-              </Badge>
-            </div>
           </div>
           <div className="hidden sm:block">
             <CardAction className="flex-shrink-0">

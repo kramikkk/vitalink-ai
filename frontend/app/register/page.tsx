@@ -2,6 +2,7 @@
 
 import DarkVeil from "@/components/DarkVeil"
 import { SignUpForm } from "@/components/SignUpForm"
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
 
 export default function SignUpPage() {
   return (
@@ -13,6 +14,7 @@ export default function SignUpPage() {
       </div>
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-full w-full bg-gradient-to-b from-transparent to-background"></div>
       <div className="w-full max-w-sm md:max-w-6xl relative z-10">
+        <AnimatedThemeToggler className="absolute top-4 right-4 z-20 p-2 rounded-md hover:bg-accent" />
         <SignUpForm />
       </div>
     </div>

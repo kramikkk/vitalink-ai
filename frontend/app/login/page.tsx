@@ -11,7 +11,8 @@ export default function LoginPage() {
           hueShift={57}
         />
       </div>
-      <div className="w-full max-w-sm md:max-w-4xl">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-full w-full bg-gradient-to-b from-transparent to-background"></div>
+      <div className="w-full max-w-sm md:max-w-4xl relative z-10">
         <LoginForm />
       </div>
     </div>

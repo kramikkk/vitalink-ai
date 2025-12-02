@@ -16,14 +16,17 @@ const AlertCards = () => {
         <Card className="@container/card flex-1 flex flex-col relative overflow-hidden">
             <CardHeader>
                 <div className="flex items-center gap-2">
-                  <CardTitle>System Alerts</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    System Alerts
+                    <TriangleAlert className="size-5 text-red-500" />
+                  </CardTitle>
                 </div>
             </CardHeader>
             <CardContent className="flex-1 flex items-center justify-center">
                 <Empty>
                 <EmptyHeader>
                     <EmptyMedia variant="icon">
-                    <Bell />
+                    <TriangleAlert className="text-red-500" />
                     </EmptyMedia>
                     <EmptyTitle>No Alerts Yet</EmptyTitle>
                     <EmptyDescription>

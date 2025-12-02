@@ -45,7 +45,7 @@ export function UserCards({
   const getActivityStatus = (value: number) => {
     if (value < 40) return "Low"
     if (value > 70) return "High"
-    return "Normal"
+    return "Moderate"
   }
 
   // Stress Level: Low (<30), Normal (30-60), High (>60)
@@ -58,7 +58,7 @@ export function UserCards({
   const getStressStatus = (value: number) => {
     if (value < 30) return "Low"
     if (value > 60) return "High"
-    return "Normal"
+    return "Moderate"
   }
 
   return (
@@ -67,7 +67,10 @@ export function UserCards({
       <Card className="@container/card relative overflow-hidden flex flex-col">
         <CardHeader className="flex flex-col sm:flex-row items-start gap-2 flex-1">
           <div className="flex-1 min-w-0">
-            <CardDescription className="truncate">Heart Rate</CardDescription>
+            <CardDescription className="truncate flex items-center gap-1.5">
+              Heart Rate
+              <Heart className="size-4" />
+            </CardDescription>
             <CardTitle className="text-2xl lg:text-3xl font-semibold tabular-nums whitespace-nowrap mb-2 sm:mb-0">
               {heartRate} BPM
             </CardTitle>
@@ -90,7 +93,10 @@ export function UserCards({
       <Card className="@container/card relative overflow-hidden flex flex-col">
         <CardHeader className="flex flex-col sm:flex-row items-start gap-2 flex-1">
           <div className="flex-1 min-w-0">
-            <CardDescription className="truncate">Activity Level</CardDescription>
+            <CardDescription className="truncate flex items-center gap-1.5">
+              Activity Level
+              <Activity className="size-4" />
+            </CardDescription>
             <CardTitle className="text-2xl lg:text-3xl font-semibold tabular-nums truncate mb-2 sm:mb-0">
               {activityLevel}%
             </CardTitle>
@@ -108,21 +114,32 @@ export function UserCards({
 
       {/* Card 3 */}
       <Card className="@container/card relative overflow-hidden col-span-2 flex flex-col">
-        <CardHeader className="flex flex-col sm:flex-row items-start gap-2 flex-1">
+        <CardHeader className="flex flex-row items-start justify-between gap-2 flex-1">
           <div className="flex-1 min-w-0">
-            <CardDescription className="truncate">Stress Level</CardDescription>
+            <CardDescription className="truncate flex items-center gap-1.5">
+              Stress Level
+              <Brain className="size-4" />
+            </CardDescription>
             <CardTitle className="text-2xl lg:text-3xl font-semibold tabular-nums truncate mb-2 sm:mb-0">
               {stressLevel}%
             </CardTitle>
           </div>
+          <div className="flex flex-col items-end gap-1 flex-shrink-0">
+            <Badge variant="secondary" className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800">
+              AI-Driven
+            </Badge>
+          </div>
         </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm flex-shrink-0">
+        <CardFooter className="flex-row items-center justify-between gap-1.5 text-sm flex-shrink-0">
           <div className={cn("font-medium", getStressColor(stressLevel))}>
             {getStressStatus(stressLevel)}
           </div>
+          <div className="text-xs text-muted-foreground">
+            Isolation Forest
+          </div>
         </CardFooter>
-        <div className="absolute bottom-0 right-0 pointer-events-none">
-          <Brain className="size-56 text-orange-300 opacity-30 translate-x-1/3 translate-y-1/3" strokeWidth={1} />
+        <div className="absolute bottom-7 right-0 pointer-events-none">
+          <Brain className="size-150 text-orange-300 opacity-30 translate-x-1/3 translate-y-3/4" strokeWidth={0.5} />
         </div>
       </Card>
     </div>

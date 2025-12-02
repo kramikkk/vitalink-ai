@@ -9,6 +9,7 @@ import {
   FieldSeparator,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
 import Image from "next/image"
 
@@ -33,6 +34,10 @@ export function LoginForm({
             <form className="p-6 md:p-8">
             <FieldGroup className="py-6">
               <div className="flex flex-col items-center gap-2 text-center">
+                <Avatar className="size-20 mb-2 md:hidden">
+                  <AvatarImage src="/VitaLinkLogoCircleTransparent.png" alt="VitaLink AI" />
+                  <AvatarFallback>VL</AvatarFallback>
+                </Avatar>
                 <h1 className="text-2xl font-bold">Welcome back</h1>
                 <p className="text-muted-foreground text-balance">
                   Login to your VitaLink AI account

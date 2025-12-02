@@ -481,7 +481,7 @@ export function AppAreaChart({
 
   return (
     <Card className="h-full flex flex-col">
-      <CardHeader className="flex-shrink-0 border-b py-5">
+      <CardHeader className="flex-shrink-0 border-b">
         <CardTitle>Wellness Trend Chart</CardTitle>
         <CardDescription>
           Live and historical data of user.

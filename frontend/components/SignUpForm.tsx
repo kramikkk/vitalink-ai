@@ -9,6 +9,7 @@ import {
   FieldSeparator,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
 import Image from "next/image"
 
@@ -31,14 +32,18 @@ export function SignUpForm({
             />
           </div>
         <form className="p-6 md:p-8">
-            <FieldGroup className="gap-4 p-6">
+            <FieldGroup className="gap-4 py-2">
               <div className="flex flex-col items-center gap-2 text-center">
-                <h1 className="text-2xl font-bold">Welcome back</h1>
+                <Avatar className="size-20 mb-2 md:hidden">
+                  <AvatarImage src="/VitaLinkLogoCircleTransparent.png" alt="VitaLink AI" />
+                  <AvatarFallback>VL</AvatarFallback>
+                </Avatar>
+                <h1 className="text-2xl font-bold">Register</h1>
                 <p className="text-muted-foreground text-balance">
-                  Login to your VitaLink AI account
+                  Create your VitaLink AI account
                 </p>
               </div>
-              <Field>
+              <Field className="gap-1.5">
                 <FieldLabel htmlFor="name">Full Name</FieldLabel>
                 <Input
                   id="name"
@@ -47,7 +52,7 @@ export function SignUpForm({
                   required
                 />
               </Field>
-              <Field>
+              <Field className="gap-1.5">
                 <FieldLabel htmlFor="username">Username</FieldLabel>
                 <Input
                   id="username"
@@ -56,7 +61,7 @@ export function SignUpForm({
                   required
                 />
               </Field>
-              <Field>
+              <Field className="gap-1.5">
                 <FieldLabel htmlFor="student-id">Student ID</FieldLabel>
                 <Input
                   id="student-id"
@@ -65,7 +70,7 @@ export function SignUpForm({
                   required
                 />
               </Field>
-              <Field>
+              <Field className="gap-1.5">
                 <FieldLabel htmlFor="email">Email</FieldLabel>
                 <Input
                   id="email"
@@ -74,13 +79,13 @@ export function SignUpForm({
                   required
                 />
               </Field>
-              <Field>
+              <Field className="gap-1.5">
                 <div className="flex items-center">
                   <FieldLabel htmlFor="password">Password</FieldLabel>
                 </div>
                 <Input id="password" type="password" placeholder="Enter your password" required />
               </Field>
-              <Field>
+              <Field className="gap-1.5">
                 <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
                 <Input
                   id="confirm-password"
@@ -89,15 +94,15 @@ export function SignUpForm({
                   required
                 />
               </Field>
-              <Field>
-                <Button type="submit">Login</Button>
-              </Field>
-              <FieldDescription className="text-center">
-                Already have an account? <Link href="/login" className="underline-offset-2 hover:underline">Log in</Link>
-              </FieldDescription>
-              <FieldDescription className="text-center">
-                Back to <Link href="/" className="underline-offset-2 hover:underline">Home</Link>
-              </FieldDescription>
+              <Button type="submit" className="w-full mt-2">Sign Up</Button>
+              <div className="flex flex-col gap-2 mt-2">
+                <FieldDescription className="text-center">
+                  Already have an account? <Link href="/login" className="underline-offset-2 hover:underline">Log in</Link>
+                </FieldDescription>
+                <FieldDescription className="text-center">
+                  Back to <Link href="/" className="underline-offset-2 hover:underline">Home</Link>
+                </FieldDescription>
+              </div>
             </FieldGroup>
           </form>
         </CardContent>

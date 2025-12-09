@@ -88,6 +88,9 @@ void setup()
 {
     Serial.begin(115200);
 
+    Wire.begin(); 
+    Wire.setClock(400000);
+
     /* MAX30102 Initialization */
     if (!particleSensor.begin(Wire, I2C_SPEED_FAST))
     {
@@ -100,12 +103,12 @@ void setup()
     Serial.println("MAX30102 initialized");
 
     /* MPU6050 Initialization */
-    Wire.begin();
     mpu.initialize();
     Serial.println("MPU6050 initialized");
 
     /* GC9A01 + LVGL initialization */
     lv_init();
+    
     tft.begin();
     tft.setRotation(0);
 
@@ -123,7 +126,9 @@ void setup()
     ui_Splash_screen_init();
     lv_scr_load(ui_Splash);
     Serial.println("Splash Loaded.");
-    delay(2000);
+    lv_timer_handler();     // forces LVGL to actually draw the splash
+    delay(30);              // wait for flush to complete
+    delay(3000);
 
     /* MAIN SCREEN */
     ui_Main_screen_init();

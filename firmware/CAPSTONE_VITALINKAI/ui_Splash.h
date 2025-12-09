@@ -14,7 +14,7 @@ extern "C" {
 extern void ui_Splash_screen_init(void);
 extern void ui_Splash_screen_destroy(void);
 extern lv_obj_t *ui_Splash;
-extern lv_obj_t *ui_Image1;
+extern lv_obj_t *ui_Image3;
 // CUSTOM VARIABLES
 
 #ifdef __cplusplus

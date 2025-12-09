@@ -3,4 +3,4 @@ ui_Splash.c
 ui.c
 ui_comp_hook.c
 ui_helpers.c
-ui_img_vitalink_logo_png.c
+ui_img_vitalink_logo_center_png.c

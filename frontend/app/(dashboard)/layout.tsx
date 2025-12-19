@@ -4,6 +4,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import NavBar from "@/components/NavBar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useRequireAuth } from "@/hooks/use-auth";
+import { UserProvider } from "@/contexts/UserContext";
 
 export default function DashboardLayout({
   children,
@@ -30,11 +31,13 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen">
-      <main className="flex-1 w-full">
-        <NavBar />
-        <div className="px-4">{children}</div>
-      </main>
-    </div>
+    <UserProvider>
+      <div className="flex min-h-screen">
+        <main className="flex-1 w-full">
+          <NavBar />
+          <div className="px-4">{children}</div>
+        </main>
+      </div>
+    </UserProvider>
   );
 }

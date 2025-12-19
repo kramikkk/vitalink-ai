@@ -16,21 +16,24 @@ import {
 import { ModeToggle } from "./ModeToggle"
 import { AnimatedThemeToggler } from "./ui/animated-theme-toggler"
 import { tokenManager } from "@/lib/api"
+import { useUser } from "@/contexts/UserContext"
 
 const NavBar = () => {
-  const [user, setUser] = useState({
-    name: "Mark Jeric Exconde",
-    email: "0322-3614@lspu.edu.ph",
-    avatar: "https://images.unsplash.com/photo-1494790108755-2616c0763e6c?w=150&h=150&fit=crop&crop=face"
-  })
+  const { user, isLoading } = useUser()
+  const [avatarUrl, setAvatarUrl] = useState('')
+
+  useEffect(() => {
+    if (user?.avatar_url) {
+      setAvatarUrl(user.avatar_url)
+    }
+  }, [user])
 
   // Listen for profile updates
   useEffect(() => {
     const handleProfileUpdate = (event: CustomEvent) => {
-      setUser(prevUser => ({
-        ...prevUser,
-        avatar: event.detail.avatar
-      }))
+      if (event.detail.avatar) {
+        setAvatarUrl(event.detail.avatar)
+      }
     }
 
     window.addEventListener('profileUpdated' as any, handleProfileUpdate)
@@ -42,6 +45,25 @@ const NavBar = () => {
 
   const handleLogout = () => {
     tokenManager.logout()
+  }
+
+  if (isLoading || !user) {
+    return (
+      <nav className="p-4 flex items-center justify-between relative">
+        <div className="flex items-center gap-4">
+          <Avatar className="h-8 w-8">
+            <AvatarFallback>VL</AvatarFallback>
+          </Avatar>
+          <div className="w-px h-6 bg-border" />
+          <div className="font-bold text-xl absolute left-1/2 -translate-x-1/2">
+            VitaLink AI
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <Avatar className="h-10 w-10 animate-pulse bg-muted" />
+        </div>
+      </nav>
+    )
   }
   
   return (
@@ -63,8 +85,8 @@ const NavBar = () => {
         <DropdownMenu>
           <DropdownMenuTrigger>
             <Avatar>
-              <AvatarImage src={user.avatar} />
-              <AvatarFallback>{user.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+              <AvatarImage src={avatarUrl || undefined} />
+              <AvatarFallback>{user.full_name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -75,13 +97,13 @@ const NavBar = () => {
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatar} alt={user.name} />
+                  <AvatarImage src={avatarUrl || undefined} alt={user.full_name} />
                   <AvatarFallback className="rounded-lg">
-                    {user.name.split(' ').map(n => n[0]).join('')}
+                    {user.full_name.split(' ').map(n => n[0]).join('')}
                   </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
+                  <span className="truncate font-medium">{user.full_name}</span>
                   <span className="text-muted-foreground truncate text-xs">
                     {user.email}
                   </span>

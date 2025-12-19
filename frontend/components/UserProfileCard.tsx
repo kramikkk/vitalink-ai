@@ -9,6 +9,8 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Mail, Phone, User, Edit, User2, Camera } from 'lucide-react'
+import { useUser } from '@/contexts/UserContext'
+import { authApi, tokenManager } from '@/lib/api'
 
 interface Student {
   id: string
@@ -22,21 +24,17 @@ interface UserProfileCardProps {
 }
 
 export default function UserProfileCard({ student }: UserProfileCardProps) {
+  const { user, isLoading, refreshUser, updateUser } = useUser()
   const [mounted, setMounted] = useState(false)
-  const [studentData, setStudentData] = useState({
-    username: 'kramik',
-    name: 'Mark Jeric Exconde',
-    email: '0322-3614@lspu.edu.ph',
-    phone: '09490508940',
-    schoolId: '0322-3614',
-    emergencyContact: '09347578322',
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616c0763e6c?w=150&h=150&fit=crop&crop=face'
-  })
-
   const [isOpen, setIsOpen] = useState(false)
-  const [formData, setFormData] = useState(studentData)
-  const [previewImage, setPreviewImage] = useState(studentData.avatar)
+  const [formData, setFormData] = useState({
+    phone: '',
+    emergency_contact: '',
+    avatar_url: ''
+  })
+  const [previewImage, setPreviewImage] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -53,22 +51,56 @@ export default function UserProfileCard({ student }: UserProfileCardProps) {
     }
   }, [])
 
-  const handleSave = () => {
-    setStudentData(formData)
-    setIsOpen(false)
-    
-    // Dispatch custom event to notify NavBar
-    const event = new CustomEvent('profileUpdated', { 
-      detail: { 
-        avatar: formData.avatar,
-        name: formData.name,
-        email: formData.email 
-      } 
-    })
-    window.dispatchEvent(event)
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        phone: user.phone || '',
+        emergency_contact: user.emergency_contact || '',
+        avatar_url: user.avatar_url || ''
+      })
+      setPreviewImage(user.avatar_url || '')
+    }
+  }, [user])
+
+  const handleSave = async () => {
+    setIsSaving(true)
+    try {
+      const token = tokenManager.getToken()
+      if (!token) return
+
+      const response = await fetch('http://localhost:8000/auth/me/update', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+
+      if (response.ok) {
+        await refreshUser()
+        setIsOpen(false)
+        
+        // Dispatch custom event to notify NavBar
+        const event = new CustomEvent('profileUpdated', { 
+          detail: { 
+            avatar: formData.avatar_url,
+            name: user?.full_name,
+            email: user?.email 
+          } 
+        })
+        window.dispatchEvent(event)
+      } else {
+        console.error('Failed to update profile')
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
-  const handleInputChange = (field: keyof typeof studentData, value: string | number) => {
+  const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -84,7 +116,7 @@ export default function UserProfileCard({ student }: UserProfileCardProps) {
         setPreviewImage(imageUrl)
         setFormData(prev => ({
           ...prev,
-          avatar: imageUrl
+          avatar_url: imageUrl
         }))
       }
       reader.readAsDataURL(file)
@@ -95,14 +127,14 @@ export default function UserProfileCard({ student }: UserProfileCardProps) {
     fileInputRef.current?.click()
   }
 
-  if (!mounted) {
+  if (!mounted || isLoading || !user) {
     return (
       <Card className="w-full mx-auto">
         <CardHeader className="pb-4">
           <div className="flex justify-between items-start">
             <div className="flex items-center gap-4">
               <Avatar className="h-14 w-14">
-                <AvatarFallback>EJ</AvatarFallback>
+                <AvatarFallback>...</AvatarFallback>
               </Avatar>
               <div className="flex flex-col">
                 <div className="h-6 w-32 bg-muted rounded animate-pulse"></div>
@@ -140,16 +172,16 @@ export default function UserProfileCard({ student }: UserProfileCardProps) {
           <div className="flex items-center gap-4">
             <Avatar className="h-14 w-14">
               <AvatarImage 
-                src={studentData.avatar}
+                src={user.avatar_url || undefined}
                 alt="Student Avatar" 
               />
-              <AvatarFallback>{studentData.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+              <AvatarFallback>{user.full_name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
-              <h3 className="text-lg font-semibold">{studentData.name}</h3>
-              <p className="text-sm text-muted-foreground">@{studentData.username}</p>
+              <h3 className="text-lg font-semibold">{user.full_name}</h3>
+              <p className="text-sm text-muted-foreground">@{user.username}</p>
               <Badge variant="secondary" className="w-fit mt-1">
-                {studentData.schoolId}
+                {user.student_id}
               </Badge>
             </div>
           </div>
@@ -179,7 +211,7 @@ export default function UserProfileCard({ student }: UserProfileCardProps) {
                       <Avatar className="h-32 w-32 ring-2 ring-offset-2 ring-primary/20 transition-all group-hover:ring-primary/40">
                         <AvatarImage src={previewImage} alt="Preview" />
                         <AvatarFallback className="text-2xl">
-                          {formData.name.split(' ').map(n => n[0]).join('')}
+                          {user.full_name.split(' ').map(n => n[0]).join('')}
                         </AvatarFallback>
                       </Avatar>
                       <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -203,7 +235,7 @@ export default function UserProfileCard({ student }: UserProfileCardProps) {
                   <Label htmlFor="name">Full Name</Label>
                   <Input
                     id="name"
-                    value={formData.name}
+                    value={user.full_name}
                     disabled
                     className="bg-muted"
                   />
@@ -212,7 +244,7 @@ export default function UserProfileCard({ student }: UserProfileCardProps) {
                   <Label htmlFor="username">Username</Label>
                   <Input
                     id="username"
-                    value={formData.username}
+                    value={user.username}
                     disabled
                     className="bg-muted"
                   />
@@ -222,7 +254,7 @@ export default function UserProfileCard({ student }: UserProfileCardProps) {
                   <Input
                     id="email"
                     type="email"
-                    value={formData.email}
+                    value={user.email}
                     disabled
                     className="bg-muted"
                   />
@@ -233,13 +265,14 @@ export default function UserProfileCard({ student }: UserProfileCardProps) {
                     id="phone"
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
+                    placeholder="Enter phone number"
                   />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="schoolId">School ID</Label>
                   <Input
                     id="schoolId"
-                    value={formData.schoolId}
+                    value={user.student_id}
                     disabled
                     className="bg-muted"
                   />
@@ -248,8 +281,9 @@ export default function UserProfileCard({ student }: UserProfileCardProps) {
                   <Label htmlFor="emergencyContact">Emergency Contact</Label>
                   <Input
                     id="emergencyContact"
-                    value={formData.emergencyContact}
-                    onChange={(e) => handleInputChange('emergencyContact', e.target.value)}
+                    value={formData.emergency_contact}
+                    onChange={(e) => handleInputChange('emergency_contact', e.target.value)}
+                    placeholder="Enter emergency contact"
                   />
                 </div>
               </div>
@@ -259,7 +293,9 @@ export default function UserProfileCard({ student }: UserProfileCardProps) {
                 </p>
               </div>
               <div className="flex gap-2 pt-2 px-4">
-                <Button onClick={handleSave}>Save Changes</Button>
+                <Button onClick={handleSave} disabled={isSaving}>
+                  {isSaving ? 'Saving...' : 'Save Changes'}
+                </Button>
                 <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
               </div>
             </SheetContent>
@@ -270,15 +306,15 @@ export default function UserProfileCard({ student }: UserProfileCardProps) {
       <CardContent className="space-y-3 flex-1">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Mail className="h-4 w-4" />
-          <span>{studentData.email}</span>
+          <span>{user.email}</span>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Phone className="h-4 w-4" />
-          <span>{studentData.phone}</span>
+          <span>{user.phone || 'Not provided'}</span>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <User className="h-4 w-4" />
-          <span>Emergency: {studentData.emergencyContact}</span>
+          <span>Emergency: {user.emergency_contact || 'Not provided'}</span>
         </div>
       </CardContent>
       

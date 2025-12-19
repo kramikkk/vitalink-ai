@@ -3,8 +3,20 @@
 import DarkVeil from "@/components/DarkVeil"
 import { SignUpForm } from "@/components/SignUpForm"
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
+import { useRedirectIfAuthenticated } from "@/hooks/use-auth"
 
 export default function SignUpPage() {
+  const { isChecking } = useRedirectIfAuthenticated('/student')
+
+  // Show nothing while checking authentication
+  if (isChecking) {
+    return (
+      <div className="flex min-h-svh items-center justify-center">
+        <div className="animate-pulse">Loading...</div>
+      </div>
+    )
+  }
+
   return (
     <div className="relative flex min-h-svh flex-col items-center justify-center p-6 md:p-10">
       <div className="absolute inset-0 z-[-1] h-full w-full">

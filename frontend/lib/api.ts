@@ -112,4 +112,12 @@ export const tokenManager = {
   isAuthenticated(): boolean {
     return !!this.getToken();
   },
+
+  // Logout helper
+  logout() {
+    this.removeToken();
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+  },
 };

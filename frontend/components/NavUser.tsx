@@ -1,6 +1,7 @@
 "use client"
 
 import { Bell, CircleUser, Ellipsis, LogOut } from "lucide-react"
+import { tokenManager } from "@/lib/api"
 
 import {
   Avatar,
@@ -34,6 +35,10 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
+
+  const handleLogout = () => {
+    tokenManager.logout()
+  }
 
   return (
     <SidebarMenu>
@@ -89,9 +94,9 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive">
+            <DropdownMenuItem variant="destructive" onClick={handleLogout}>
               <LogOut />
-              <Link href="/login">Log out</Link>
+              Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

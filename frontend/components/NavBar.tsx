@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { ModeToggle } from "./ModeToggle"
 import { AnimatedThemeToggler } from "./ui/animated-theme-toggler"
+import { tokenManager } from "@/lib/api"
 
 const NavBar = () => {
   const [user, setUser] = useState({
@@ -38,6 +39,10 @@ const NavBar = () => {
       window.removeEventListener('profileUpdated' as any, handleProfileUpdate)
     }
   }, [])
+
+  const handleLogout = () => {
+    tokenManager.logout()
+  }
   
   return (
     <nav className="p-4 flex items-center justify-between relative">
@@ -95,11 +100,9 @@ const NavBar = () => {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild variant="destructive">
-              <Link href="/login" className="flex items-center">
-                <LogOut className="mr-2 h-4 w-4" />
-                Log out
-              </Link>
+            <DropdownMenuItem variant="destructive" onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

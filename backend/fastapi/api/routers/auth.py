@@ -1,0 +1,133 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from pydantic import BaseModel, EmailStr
+from datetime import timedelta
+from database import get_db
+from models_db import User
+from models import UserLogin, Token
+from utils.auth_utils import hash_password, verify_password, create_access_token, get_current_user
+
+router = APIRouter(tags=["Authentication"])
+
+
+class SignupRequest(BaseModel):
+    full_name: str
+    username: str
+    student_id: str
+    email: EmailStr
+    password: str
+    confirm_password: str
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+@router.post("/signup", response_model=Token, status_code=status.HTTP_201_CREATED)
+def signup(user: SignupRequest, db: Session = Depends(get_db)):
+   
+    if user.password != user.confirm_password:
+        raise HTTPException(status_code=400, detail="Passwords do not match")
+    
+    # Password strength validation
+    if len(user.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters long")
+
+    existing_user = db.query(User).filter(User.email == user.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    existing_username = db.query(User).filter(User.username == user.username).first()
+    if existing_username:
+        raise HTTPException(status_code=400, detail="Username already taken")
+    
+    existing_student_id = db.query(User).filter(User.student_id == user.student_id).first()
+    if existing_student_id:
+        raise HTTPException(status_code=400, detail="Student ID already registered")
+
+    hashed_pw = hash_password(user.password)
+
+    new_user = User(
+        full_name=user.full_name,
+        username=user.username,
+        student_id=user.student_id,
+        email=user.email,
+        password=hashed_pw
+    )
+
+    try:
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to create user")
+
+    access_token = create_access_token(data={"sub": str(new_user.id)})
+
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.post("/login", response_model=Token)
+def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == user_credentials.email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password"
+        )
+
+    if not verify_password(user_credentials.password, user.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password"
+        )
+
+    access_token_expires = timedelta(minutes=30)
+    access_token = create_access_token(
+        data={"sub": str(user.id)}, expires_delta=access_token_expires
+    )
+
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.get("/me", response_model=dict)
+def get_current_user_profile(current_user: User = Depends(get_current_user)):
+    return {
+        "id": current_user.id,
+        "full_name": current_user.full_name,
+        "username": current_user.username,
+        "student_id": current_user.student_id,
+        "email": current_user.email,
+        "phone": current_user.phone,
+        "emergency_contact": current_user.emergency_contact,
+        "avatar_url": current_user.avatar_url,
+    }
+
+class ProfileUpdate(BaseModel):
+    phone: str | None = None
+    emergency_contact: str | None = None
+    avatar_url: str | None = None
+
+
+@router.put("/me/update")
+def update_profile(
+    data: ProfileUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Allows updating phone, emergency contact, and avatar.
+    """
+    if data.phone is not None:
+        current_user.phone = data.phone
+    if data.emergency_contact is not None:
+        current_user.emergency_contact = data.emergency_contact
+    if data.avatar_url is not None:
+        current_user.avatar_url = data.avatar_url
+
+    db.commit()
+    db.refresh(current_user)
+
+    return {"message": "Profile updated successfully"}

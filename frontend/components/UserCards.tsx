@@ -10,16 +10,25 @@ import {
 } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
+interface Student {
+  id: string
+  name: string
+  schoolId: string
+  avatar: string
+}
+
 interface UserCardsProps {
   heartRate?: number
   activityLevel?: number
   stressLevel?: number
+  student?: Student
 }
 
 export function UserCards({ 
   heartRate = 101, 
   activityLevel = 58, 
-  stressLevel = 21
+  stressLevel = 21,
+  student
 }: UserCardsProps = {}) {
   
   // Heart Rate: Low (<60), Normal (60-100), High (>100)

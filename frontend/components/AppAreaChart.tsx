@@ -123,14 +123,23 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
+interface Student {
+  id: string
+  name: string
+  schoolId: string
+  avatar: string
+}
+
 interface AppAreaChartProps {
   selectedMetric?: "All" | "HeartRate" | "ActivityLevel" | "StressLevel"
   timeRange?: string
+  student?: Student
 }
 
 export function AppAreaChart({ 
   selectedMetric = "All", 
-  timeRange = "live" 
+  timeRange = "live",
+  student
 }: AppAreaChartProps = {}) {
 
   // Filter data based on time range

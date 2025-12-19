@@ -10,7 +10,18 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 
-const AlertCards = () => {
+interface Student {
+  id: string
+  name: string
+  schoolId: string
+  avatar: string
+}
+
+interface AlertCardsProps {
+  student?: Student
+}
+
+const AlertCards = ({ student }: AlertCardsProps) => {
   return (
     <div className="flex flex-col h-full">
         <Card className="@container/card flex-1 flex flex-col relative overflow-hidden">

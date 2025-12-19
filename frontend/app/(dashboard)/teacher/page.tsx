@@ -37,7 +37,7 @@ const students = [
 ]
 
 const TeacherPage = () => {
-	const [selectedStudent, setSelectedStudent] = useState<string>(students[0].id)
+	const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
 	const [searchQuery, setSearchQuery] = useState("")
 	const [open, setOpen] = useState(false)
 	const [selectedMetric, setSelectedMetric] = useState<"All" | "HeartRate" | "ActivityLevel" | "StressLevel">("All")
@@ -178,27 +178,35 @@ const TeacherPage = () => {
 						</div>
 					</CardHeader>
 				</Card>			{/* Student Dashboard Content */}
+			{!currentStudent ? (
+				<Card className="flex-1 flex items-center justify-center">
+					<div className="text-center p-8">
+						<p className="text-lg text-muted-foreground">Please select a student to view their health metrics</p>
+					</div>
+				</Card>
+			) : (
 			<div className="flex-1 flex gap-4 flex-col lg:flex-row items-stretch min-h-0 overflow-y-auto lg:overflow-hidden">
 				{/* LEFT */}
 				<div className="flex-1 min-w-0 flex flex-col gap-4 lg:min-h-0 lg:overflow-y-auto">
 					<div className="flex-shrink-0">
-						<UserCards />
+					<UserCards student={currentStudent} />
 					</div>
 					<div className="flex-1 min-h-[400px]">
-						<AppAreaChart selectedMetric={selectedMetric} timeRange={timeRange} />
+					<AppAreaChart selectedMetric={selectedMetric} timeRange={timeRange} student={currentStudent} />
 					</div>
 				</div>
 
 				{/* RIGHT */}
 				<div className="w-full lg:w-1/3 min-w-[300px] flex flex-col gap-4 lg:overflow-y-auto">
 					<div className="flex-[0.6] min-h-0">
-						<AlertCards />
+					<AlertCards student={currentStudent} />
 					</div>
 					<div className="flex-[0.4] min-h-0">
-						<UserProfileCard />
+						<UserProfileCard student={currentStudent} />
 					</div>
 				</div>
 			</div>
+			)}
 		</div>
 	)
 }

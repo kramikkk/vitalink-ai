@@ -10,7 +10,18 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Mail, Phone, User, Edit, User2, Camera } from 'lucide-react'
 
-export default function UserProfileCard() {
+interface Student {
+  id: string
+  name: string
+  schoolId: string
+  avatar: string
+}
+
+interface UserProfileCardProps {
+  student?: Student
+}
+
+export default function UserProfileCard({ student }: UserProfileCardProps) {
   const [mounted, setMounted] = useState(false)
   const [studentData, setStudentData] = useState({
     username: 'kramik',

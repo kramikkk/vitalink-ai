@@ -13,6 +13,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Search, ChevronsUpDown, Check } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import { useRoleProtection } from "@/hooks/use-role-protection"
+import { UserRole } from "@/lib/api"
 
 // Mock student data - replace with API call
 const students = [
@@ -37,6 +39,9 @@ const students = [
 ]
 
 const AdminPage = () => {
+	// Protect this route - only allow ADMIN and SUPER_ADMIN
+	useRoleProtection([UserRole.ADMIN, UserRole.SUPER_ADMIN])
+	
 	const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
 	const [searchQuery, setSearchQuery] = useState("")
 	const [open, setOpen] = useState(false)

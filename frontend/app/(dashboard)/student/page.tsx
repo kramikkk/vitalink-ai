@@ -7,8 +7,13 @@ import AlertCards from "@/components/AlertCards"
 import UserProfileCard from "@/components/UserProfileCard"
 import { ChartFilters } from "@/components/ChartFilters"
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { useRoleProtection } from "@/hooks/use-role-protection"
+import { UserRole } from "@/lib/api"
 
 const page = () => {
+  // Protect this route - only allow STUDENT role
+  useRoleProtection([UserRole.STUDENT])
+  
   const [selectedMetric, setSelectedMetric] = useState<"All" | "HeartRate" | "ActivityLevel" | "StressLevel">("All")
   const [timeRange, setTimeRange] = useState("live")
 

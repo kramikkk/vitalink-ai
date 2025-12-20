@@ -15,7 +15,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useState, FormEvent } from "react"
 import { useRouter } from "next/navigation"
-import { authApi, tokenManager } from "@/lib/api"
+import { authApi, tokenManager, UserRole } from "@/lib/api"
 import { Loader2 } from "lucide-react"
 
 export function SignUpForm({
@@ -61,7 +61,16 @@ export function SignUpForm({
     try {
       const response = await authApi.signup(formData)
       tokenManager.setToken(response.access_token)
-      router.push('/student')
+      tokenManager.setRole(response.role)
+      
+      // Role-based redirect (signup defaults to student role)
+      if (response.role === UserRole.STUDENT) {
+        router.push('/student')
+      } else if (response.role === UserRole.ADMIN || response.role === UserRole.SUPER_ADMIN) {
+        router.push('/admin')
+      } else {
+        router.push('/student') // fallback
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Signup failed')
     } finally {

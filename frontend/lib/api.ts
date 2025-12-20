@@ -96,6 +96,23 @@ export const authApi = {
 
     return response.json();
   },
+
+  // Get all students (admin only)
+  async getStudents(token: string): Promise<UserProfile[]> {
+    const response = await fetch(`${API_BASE_URL}/auth/students`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch students');
+    }
+
+    return response.json();
+  },
 };
 
 // Token management

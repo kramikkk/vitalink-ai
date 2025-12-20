@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { UserCards } from "@/components/UserCards"
 import { AppAreaChart } from "@/components/AppAreaChart"
 import AlertCards from "@/components/AlertCards"
@@ -10,51 +10,62 @@ import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/ca
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Search, ChevronsUpDown, Check } from "lucide-react"
+import { Search, ChevronsUpDown, Check, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { useRoleProtection } from "@/hooks/use-role-protection"
-import { UserRole } from "@/lib/api"
-
-// Mock student data - replace with API call
-const students = [
-	{
-		id: "1",
-		name: "Mark Jeric Exconde",
-		schoolId: "0322-3614",
-		avatar: "https://images.unsplash.com/photo-1494790108755-2616c0763e6c?w=150",
-	},
-	{
-		id: "2",
-		name: "Jasmine Macalintal",
-		schoolId: "0322-3615",
-		avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
-	},
-	{
-		id: "3",
-		name: "Zyra Mae Flores",
-		schoolId: "0322-3616",
-		avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150",
-	},
-]
+import { UserRole, authApi, tokenManager, UserProfile } from "@/lib/api"
 
 const AdminPage = () => {
 	// Protect this route - only allow ADMIN and SUPER_ADMIN
 	useRoleProtection([UserRole.ADMIN, UserRole.SUPER_ADMIN])
 	
+	const [students, setStudents] = useState<UserProfile[]>([])
+	const [loading, setLoading] = useState(true)
+	const [error, setError] = useState("")
 	const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
 	const [searchQuery, setSearchQuery] = useState("")
 	const [open, setOpen] = useState(false)
 	const [selectedMetric, setSelectedMetric] = useState<"All" | "HeartRate" | "ActivityLevel" | "StressLevel">("All")
 	const [timeRange, setTimeRange] = useState("live")
 
+	// Fetch students from database
+	useEffect(() => {
+		const fetchStudents = async () => {
+			try {
+				const token = tokenManager.getToken()
+				if (!token) {
+					setError("No authentication token found")
+					return
+				}
+				
+				const studentsData = await authApi.getStudents(token)
+				setStudents(studentsData)
+			} catch (err) {
+				setError(err instanceof Error ? err.message : 'Failed to fetch students')
+			} finally {
+				setLoading(false)
+			}
+		}
+
+		fetchStudents()
+	}, [])
+
 	const filteredStudents = students.filter(
 		(student) =>
-			student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			student.schoolId.includes(searchQuery)
+			student.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+			student.student_id?.includes(searchQuery)
 	)
 
-	const currentStudent = students.find((s) => s.id === selectedStudent)
+	const currentStudent = students.find((s) => s.id.toString() === selectedStudent)
+
+	// Transform UserProfile to Student type for components
+	const transformedStudent = currentStudent ? {
+		id: currentStudent.id.toString(),
+		name: currentStudent.full_name,
+		schoolId: currentStudent.student_id || '',
+		avatar: currentStudent.avatar_url || ''
+	} : undefined
 
 	return (
 		<div className="min-h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)] pb-4 flex flex-col gap-4 overflow-y-auto lg:overflow-hidden">
@@ -92,13 +103,19 @@ const AdminPage = () => {
 									role="combobox"
 									aria-expanded={open}
 									className="w-full sm:w-[280px] justify-between h-auto py-2"
+									disabled={loading}
 								>
-									{currentStudent ? (
+									{loading ? (
+										<div className="flex items-center gap-2">
+											<Loader2 className="h-4 w-4 animate-spin" />
+											<span>Loading students...</span>
+										</div>
+									) : currentStudent ? (
 										<div className="flex items-center gap-2 flex-1 min-w-0">
 											<Avatar className="h-8 w-8 flex-shrink-0">
-												<AvatarImage src={currentStudent.avatar} />
+												<AvatarImage src={currentStudent.avatar_url || undefined} />
 												<AvatarFallback>
-													{currentStudent.name
+													{currentStudent.full_name
 														.split(" ")
 														.map((n) => n[0])
 														.join("")}
@@ -106,10 +123,10 @@ const AdminPage = () => {
 											</Avatar>
 											<div className="flex flex-col items-start flex-1 min-w-0">
 												<span className="truncate text-sm font-medium">
-													{currentStudent.name}
+													{currentStudent.full_name}
 												</span>
 												<span className="text-xs text-muted-foreground">
-													ID: {currentStudent.schoolId}
+													ID: {currentStudent.student_id}
 												</span>
 											</div>
 										</div>
@@ -132,29 +149,33 @@ const AdminPage = () => {
 									</div>
 								</div>
 								<div className="max-h-[300px] overflow-y-auto">
-									{filteredStudents.length > 0 ? (
+									{error ? (
+										<div className="p-4 text-center text-sm text-destructive">
+											{error}
+										</div>
+									) : filteredStudents.length > 0 ? (
 										filteredStudents.map((student) => (
 											<Button
 												key={student.id}
 												variant="ghost"
 												className="w-full justify-start font-normal h-auto py-3 px-2"
 												onClick={() => {
-													setSelectedStudent(student.id)
+													setSelectedStudent(student.id.toString())
 													setOpen(false)
 												}}
 											>
 												<Check
 													className={cn(
 														"mr-2 h-4 w-4 flex-shrink-0",
-														selectedStudent === student.id
+														selectedStudent === student.id.toString()
 															? "opacity-100"
 															: "opacity-0"
 													)}
 												/>
 												<Avatar className="h-8 w-8 mr-2 flex-shrink-0">
-													<AvatarImage src={student.avatar} />
+													<AvatarImage src={student.avatar_url || undefined} />
 													<AvatarFallback>
-														{student.name
+														{student.full_name
 															.split(" ")
 															.map((n) => n[0])
 															.join("")}
@@ -162,10 +183,10 @@ const AdminPage = () => {
 												</Avatar>
 												<div className="flex flex-col items-start flex-1 min-w-0">
 													<span className="truncate text-sm font-medium">
-														{student.name}
+														{student.full_name}
 													</span>
 													<span className="text-xs text-muted-foreground">
-														ID: {student.schoolId}
+														ID: {student.student_id}
 													</span>
 												</div>
 											</Button>
@@ -182,8 +203,13 @@ const AdminPage = () => {
 							</div>
 						</div>
 					</CardHeader>
-				</Card>			{/* Student Dashboard Content */}
-			{!currentStudent ? (
+				</Card>			{/* Hidden profile card for admin's own profile editing */}
+			<div className="hidden">
+				<UserProfileCard />
+			</div>
+
+			{/* Student Dashboard Content */}
+			{!transformedStudent ? (
 				<Card className="flex-1 flex items-center justify-center">
 					<div className="text-center p-8">
 						<p className="text-lg text-muted-foreground">Please select a student to view their health metrics</p>
@@ -194,20 +220,20 @@ const AdminPage = () => {
 				{/* LEFT */}
 				<div className="flex-1 min-w-0 flex flex-col gap-4 lg:min-h-0 lg:overflow-y-auto">
 					<div className="flex-shrink-0">
-					<UserCards student={currentStudent} />
+					<UserCards student={transformedStudent} />
 					</div>
 					<div className="flex-1 min-h-[400px]">
-					<AppAreaChart selectedMetric={selectedMetric} timeRange={timeRange} student={currentStudent} />
+					<AppAreaChart selectedMetric={selectedMetric} timeRange={timeRange} student={transformedStudent} />
 					</div>
 				</div>
 
 				{/* RIGHT */}
 				<div className="w-full lg:w-1/3 min-w-[300px] flex flex-col gap-4 lg:overflow-y-auto">
 					<div className="flex-[0.6] min-h-0">
-					<AlertCards student={currentStudent} />
+					<AlertCards student={transformedStudent} />
 					</div>
 					<div className="flex-[0.4] min-h-0">
-						<UserProfileCard student={currentStudent} />
+						<UserProfileCard studentProfile={currentStudent} />
 					</div>
 				</div>
 			</div>

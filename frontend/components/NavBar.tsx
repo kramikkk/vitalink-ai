@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { LogOut, CircleUser, Bell, Settings } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -20,6 +21,7 @@ import { useUser } from "@/contexts/UserContext"
 
 const NavBar = () => {
   const { user, isLoading } = useUser()
+  const router = useRouter()
   const [avatarUrl, setAvatarUrl] = useState('')
 
   useEffect(() => {
@@ -45,6 +47,11 @@ const NavBar = () => {
 
   const handleLogout = () => {
     tokenManager.logout()
+  }
+
+  const handleProfileClick = () => {
+    const event = new CustomEvent('openProfileEdit')
+    window.dispatchEvent(event)
   }
 
   if (isLoading || !user) {
@@ -113,10 +120,7 @@ const NavBar = () => {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => {
-                const event = new CustomEvent('openProfileEdit')
-                window.dispatchEvent(event)
-              }}>
+              <DropdownMenuItem onClick={handleProfileClick}>
                 <CircleUser />
                 Profile
               </DropdownMenuItem>

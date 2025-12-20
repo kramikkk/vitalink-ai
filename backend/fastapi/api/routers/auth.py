@@ -169,9 +169,26 @@ def admin_signup(
 
 
 class ProfileUpdate(BaseModel):
+    full_name: str | None = None
+    username: str | None = None
+    email: EmailStr | None = None
+    student_id: str | None = None
+    admin_id: str | None = None
     phone: str | None = None
     emergency_contact: str | None = None
     avatar_url: str | None = None
+    password: str | None = None
+
+
+class AdminUserUpdate(BaseModel):
+    full_name: str | None = None
+    username: str | None = None
+    email: EmailStr | None = None
+    student_id: str | None = None
+    phone: str | None = None
+    emergency_contact: str | None = None
+    avatar_url: str | None = None
+    password: str | None = None
 
 
 @router.put("/me/update")
@@ -181,16 +198,147 @@ def update_profile(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Allows updating phone, emergency contact, and avatar.
+    Allows updating own profile. Admins/super admins can update all fields, students can only update limited fields.
     """
+    # Check for unique constraints before updating
+    if data.email is not None:
+        existing_email = db.query(User).filter(
+            User.email == data.email,
+            User.id != current_user.id
+        ).first()
+        if existing_email:
+            raise HTTPException(status_code=400, detail="Email already in use")
+        current_user.email = data.email
+    
+    if data.username is not None:
+        existing_username = db.query(User).filter(
+            User.username == data.username,
+            User.id != current_user.id
+        ).first()
+        if existing_username:
+            raise HTTPException(status_code=400, detail="Username already taken")
+        current_user.username = data.username
+    
+    if data.student_id is not None:
+        existing_student_id = db.query(User).filter(
+            User.student_id == data.student_id,
+            User.id != current_user.id
+        ).first()
+        if existing_student_id:
+            raise HTTPException(status_code=400, detail="Student ID already in use")
+        current_user.student_id = data.student_id
+    
+    if data.admin_id is not None:
+        existing_admin_id = db.query(User).filter(
+            User.admin_id == data.admin_id,
+            User.id != current_user.id
+        ).first()
+        if existing_admin_id:
+            raise HTTPException(status_code=400, detail="Admin ID already in use")
+        current_user.admin_id = data.admin_id
+    
+    # Update other fields
+    if data.full_name is not None:
+        current_user.full_name = data.full_name
     if data.phone is not None:
         current_user.phone = data.phone
     if data.emergency_contact is not None:
         current_user.emergency_contact = data.emergency_contact
     if data.avatar_url is not None:
         current_user.avatar_url = data.avatar_url
+    if data.password is not None:
+        if len(data.password) < 8:
+            raise HTTPException(status_code=400, detail="Password must be at least 8 characters long")
+        current_user.password = hash_password(data.password)
 
     db.commit()
     db.refresh(current_user)
 
     return {"message": "Profile updated successfully"}
+
+
+@router.get("/students", response_model=list)
+def get_all_students(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.SUPER_ADMIN]))
+):
+    """
+    Get all students. Only accessible by admins and super admins.
+    """
+    students = db.query(User).filter(User.role == "student").all()
+    
+    return [
+        {
+            "id": student.id,
+            "full_name": student.full_name,
+            "username": student.username,
+            "student_id": student.student_id,
+            "email": student.email,
+            "avatar_url": student.avatar_url,
+            "phone": student.phone,
+            "emergency_contact": student.emergency_contact,
+        }
+        for student in students
+    ]
+
+
+@router.put("/users/{user_id}/update")
+def update_user_profile(
+    user_id: int,
+    data: AdminUserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.SUPER_ADMIN]))
+):
+    """
+    Allows admins/super admins to update any user's profile.
+    """
+    user_to_update = db.query(User).filter(User.id == user_id).first()
+    if not user_to_update:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check for unique constraints before updating
+    if data.email is not None:
+        existing_email = db.query(User).filter(
+            User.email == data.email, 
+            User.id != user_id
+        ).first()
+        if existing_email:
+            raise HTTPException(status_code=400, detail="Email already in use")
+        user_to_update.email = data.email
+    
+    if data.username is not None:
+        existing_username = db.query(User).filter(
+            User.username == data.username,
+            User.id != user_id
+        ).first()
+        if existing_username:
+            raise HTTPException(status_code=400, detail="Username already taken")
+        user_to_update.username = data.username
+    
+    if data.student_id is not None:
+        existing_student_id = db.query(User).filter(
+            User.student_id == data.student_id,
+            User.id != user_id
+        ).first()
+        if existing_student_id:
+            raise HTTPException(status_code=400, detail="Student ID already in use")
+        user_to_update.student_id = data.student_id
+    
+    # Update other fields
+    if data.full_name is not None:
+        user_to_update.full_name = data.full_name
+    if data.phone is not None:
+        user_to_update.phone = data.phone
+    if data.emergency_contact is not None:
+        user_to_update.emergency_contact = data.emergency_contact
+    if data.avatar_url is not None:
+        user_to_update.avatar_url = data.avatar_url
+    if data.password is not None:
+        if len(data.password) < 8:
+            raise HTTPException(status_code=400, detail="Password must be at least 8 characters long")
+        user_to_update.password = hash_password(data.password)
+
+    db.commit()
+    db.refresh(user_to_update)
+
+    return {"message": "User profile updated successfully"}

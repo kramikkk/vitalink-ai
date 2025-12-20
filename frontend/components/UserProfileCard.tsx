@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Mail, Phone, User, Edit, User2, Camera } from 'lucide-react'
 import { useUser } from '@/contexts/UserContext'
-import { authApi, tokenManager } from '@/lib/api'
+import { authApi, tokenManager, UserProfile } from '@/lib/api'
 
 interface Student {
   id: string
@@ -21,27 +21,50 @@ interface Student {
 
 interface UserProfileCardProps {
   student?: Student
+  studentProfile?: UserProfile
 }
 
-export default function UserProfileCard({ student }: UserProfileCardProps) {
+export default function UserProfileCard({ student, studentProfile }: UserProfileCardProps) {
   const { user, isLoading, refreshUser, updateUser } = useUser()
   const [mounted, setMounted] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [formData, setFormData] = useState({
+    full_name: '',
+    username: '',
+    email: '',
+    student_id: '',
     phone: '',
     emergency_contact: '',
-    avatar_url: ''
+    avatar_url: '',
+    password: ''
   })
   const [previewImage, setPreviewImage] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isSaving, setIsSaving] = useState(false)
 
+  // If studentProfile is provided (admin viewing a student), use that
+  // Otherwise if student prop is provided (legacy), transform it
+  // Otherwise use logged-in user
+  const displayUser = studentProfile ? studentProfile : student ? {
+    full_name: student.name,
+    username: student.name.toLowerCase().replace(/\s+/g, ''),
+    student_id: student.schoolId,
+    admin_id: null,
+    email: 'N/A', // Student email not provided in Student type
+    phone: null,
+    emergency_contact: null,
+    avatar_url: student.avatar
+  } : user
+
   useEffect(() => {
     setMounted(true)
     
     // Listen for profile edit open event from NavBar
+    // Only respond if this is the user's own profile (not viewing a student)
     const handleOpenProfileEdit = () => {
-      setIsOpen(true)
+      if (!studentProfile && !student) {
+        setIsOpen(true)
+      }
     }
     
     window.addEventListener('openProfileEdit', handleOpenProfileEdit)
@@ -49,18 +72,30 @@ export default function UserProfileCard({ student }: UserProfileCardProps) {
     return () => {
       window.removeEventListener('openProfileEdit', handleOpenProfileEdit)
     }
-  }, [])
+  }, [studentProfile, student])
 
   useEffect(() => {
-    if (user) {
+    const profileToEdit = studentProfile || user
+    if (profileToEdit) {
+      const userRole = tokenManager.getRole()
+      const isAdmin = userRole === 'admin' || userRole === 'super_admin'
+      
       setFormData({
-        phone: user.phone || '',
-        emergency_contact: user.emergency_contact || '',
-        avatar_url: user.avatar_url || ''
+        full_name: profileToEdit.full_name || '',
+        username: profileToEdit.username || '',
+        email: profileToEdit.email || '',
+        // Use admin_id for admins, student_id for students
+        student_id: (!studentProfile && isAdmin) 
+          ? (profileToEdit.admin_id || '') 
+          : (profileToEdit.student_id || ''),
+        phone: profileToEdit.phone || '',
+        emergency_contact: profileToEdit.emergency_contact || '',
+        avatar_url: profileToEdit.avatar_url || '',
+        password: ''
       })
-      setPreviewImage(user.avatar_url || '')
+      setPreviewImage(profileToEdit.avatar_url || '')
     }
-  }, [user])
+  }, [user, studentProfile])
 
   const handleSave = async () => {
     setIsSaving(true)
@@ -68,33 +103,72 @@ export default function UserProfileCard({ student }: UserProfileCardProps) {
       const token = tokenManager.getToken()
       if (!token) return
 
-      const response = await fetch('http://localhost:8000/auth/me/update', {
+      const userRole = tokenManager.getRole()
+      const isAdmin = userRole === 'admin' || userRole === 'super_admin'
+
+      // If editing a student profile, use their ID, otherwise update own profile
+      const updateUrl = studentProfile 
+        ? `http://localhost:8000/auth/users/${studentProfile.id}/update`
+        : 'http://localhost:8000/auth/me/update'
+
+      // Prepare data - only send fields that can be updated
+      const updateData = (studentProfile || isAdmin) ? {
+        // Admin can update all fields (for students or themselves)
+        ...(formData.full_name && { full_name: formData.full_name }),
+        ...(formData.username && { username: formData.username }),
+        ...(formData.email && { email: formData.email }),
+        // Send student_id for students, admin_id for admins editing themselves
+        ...(formData.student_id && {
+          [studentProfile ? 'student_id' : (isAdmin ? 'admin_id' : 'student_id')]: formData.student_id
+        }),
+        ...(formData.phone && { phone: formData.phone }),
+        ...(formData.emergency_contact && { emergency_contact: formData.emergency_contact }),
+        ...(formData.avatar_url && { avatar_url: formData.avatar_url }),
+        ...(formData.password && { password: formData.password })
+      } : {
+        // Regular student can only update limited fields
+        phone: formData.phone,
+        emergency_contact: formData.emergency_contact,
+        avatar_url: formData.avatar_url
+      }
+
+      const response = await fetch(updateUrl, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(updateData),
       })
 
       if (response.ok) {
-        await refreshUser()
+        if (!studentProfile) {
+          // Only refresh user context if editing own profile
+          await refreshUser()
+          
+          // Dispatch custom event to notify NavBar
+          const event = new CustomEvent('profileUpdated', { 
+            detail: { 
+              avatar: formData.avatar_url,
+              name: user?.full_name,
+              email: user?.email 
+            } 
+          })
+          window.dispatchEvent(event)
+        }
         setIsOpen(false)
         
-        // Dispatch custom event to notify NavBar
-        const event = new CustomEvent('profileUpdated', { 
-          detail: { 
-            avatar: formData.avatar_url,
-            name: user?.full_name,
-            email: user?.email 
-          } 
-        })
-        window.dispatchEvent(event)
+        // Optionally reload the page to refresh student data
+        if (studentProfile) {
+          window.location.reload()
+        }
       } else {
-        console.error('Failed to update profile')
+        const errorData = await response.json()
+        alert(errorData.detail || 'Failed to update profile')
       }
     } catch (error) {
       console.error('Error updating profile:', error)
+      alert('Error updating profile')
     } finally {
       setIsSaving(false)
     }
@@ -127,7 +201,7 @@ export default function UserProfileCard({ student }: UserProfileCardProps) {
     fileInputRef.current?.click()
   }
 
-  if (!mounted || isLoading || !user) {
+  if (!mounted || isLoading || (!user && !student)) {
     return (
       <Card className="w-full mx-auto">
         <CardHeader className="pb-4">
@@ -172,34 +246,39 @@ export default function UserProfileCard({ student }: UserProfileCardProps) {
           <div className="flex items-center gap-4">
             <Avatar className="h-14 w-14">
               <AvatarImage 
-                src={user.avatar_url || undefined}
+                src={displayUser?.avatar_url || undefined}
                 alt="Student Avatar" 
               />
-              <AvatarFallback>{user.full_name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+              <AvatarFallback>{displayUser?.full_name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
-              <h3 className="text-lg font-semibold">{user.full_name}</h3>
-              <p className="text-sm text-muted-foreground">@{user.username}</p>
-              <Badge variant="secondary" className="w-fit mt-1">
-                {user.student_id}
-              </Badge>
+              <h3 className="text-lg font-semibold">{displayUser?.full_name}</h3>
+              <p className="text-sm text-muted-foreground">@{displayUser?.username}</p>
+              {(displayUser?.student_id || displayUser?.admin_id) && (
+                <Badge variant="secondary" className="w-fit mt-1">
+                  {displayUser?.student_id || displayUser?.admin_id}
+                </Badge>
+              )}
             </div>
           </div>
           
+          {/* Show edit button for own profile or when editing a student profile */}
+          {(!student || studentProfile) && (
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
               <Button variant="outline" size="icon">
                 <Edit className="h-4 w-4" />
               </Button>
             </SheetTrigger>
-            <SheetContent className="w-[400px] sm:w-[540px] p-4">
-              <SheetHeader>
+            <SheetContent className="w-[400px] sm:w-[540px] p-0 flex flex-col">
+              <SheetHeader className="px-6 pt-6 pb-4 flex-shrink-0">
                 <SheetTitle className='text-2xl'>Edit Profile</SheetTitle>
                 <SheetDescription>
                   Update your personal information.
                 </SheetDescription>
               </SheetHeader>
-              <div className="grid gap-4 px-4">
+              <div className="flex-1 overflow-y-auto px-6">
+              <div className="grid gap-4">
                 {/* Profile Photo Section */}
                 <div className="grid gap-2">
                   <Label className="text-center">Profile Photo</Label>
@@ -211,7 +290,7 @@ export default function UserProfileCard({ student }: UserProfileCardProps) {
                       <Avatar className="h-32 w-32 ring-2 ring-offset-2 ring-primary/20 transition-all group-hover:ring-primary/40">
                         <AvatarImage src={previewImage} alt="Preview" />
                         <AvatarFallback className="text-2xl">
-                          {user.full_name.split(' ').map(n => n[0]).join('')}
+                          {(studentProfile || user)?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -235,18 +314,20 @@ export default function UserProfileCard({ student }: UserProfileCardProps) {
                   <Label htmlFor="name">Full Name</Label>
                   <Input
                     id="name"
-                    value={user.full_name}
-                    disabled
-                    className="bg-muted"
+                    value={formData.full_name}
+                    onChange={(e) => handleInputChange('full_name', e.target.value)}
+                    disabled={!studentProfile && tokenManager.getRole() !== 'admin' && tokenManager.getRole() !== 'super_admin'}
+                    className={!studentProfile && tokenManager.getRole() !== 'admin' && tokenManager.getRole() !== 'super_admin' ? "bg-muted" : ""}
                   />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="username">Username</Label>
                   <Input
                     id="username"
-                    value={user.username}
-                    disabled
-                    className="bg-muted"
+                    value={formData.username}
+                    onChange={(e) => handleInputChange('username', e.target.value)}
+                    disabled={!studentProfile && tokenManager.getRole() !== 'admin' && tokenManager.getRole() !== 'super_admin'}
+                    className={!studentProfile && tokenManager.getRole() !== 'admin' && tokenManager.getRole() !== 'super_admin' ? "bg-muted" : ""}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -254,9 +335,10 @@ export default function UserProfileCard({ student }: UserProfileCardProps) {
                   <Input
                     id="email"
                     type="email"
-                    value={user.email}
-                    disabled
-                    className="bg-muted"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    disabled={!studentProfile && tokenManager.getRole() !== 'admin' && tokenManager.getRole() !== 'super_admin'}
+                    className={!studentProfile && tokenManager.getRole() !== 'admin' && tokenManager.getRole() !== 'super_admin' ? "bg-muted" : ""}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -269,12 +351,16 @@ export default function UserProfileCard({ student }: UserProfileCardProps) {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="schoolId">School ID</Label>
+                  <Label htmlFor="schoolId">
+                    {studentProfile ? 'Student ID' : 
+                     (tokenManager.getRole() === 'admin' || tokenManager.getRole() === 'super_admin') ? 'Admin ID' : 'Student ID'}
+                  </Label>
                   <Input
                     id="schoolId"
-                    value={user.student_id}
-                    disabled
-                    className="bg-muted"
+                    value={formData.student_id}
+                    onChange={(e) => handleInputChange('student_id', e.target.value)}
+                    disabled={!studentProfile && tokenManager.getRole() !== 'admin' && tokenManager.getRole() !== 'super_admin'}
+                    className={!studentProfile && tokenManager.getRole() !== 'admin' && tokenManager.getRole() !== 'super_admin' ? "bg-muted" : ""}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -286,35 +372,52 @@ export default function UserProfileCard({ student }: UserProfileCardProps) {
                     placeholder="Enter emergency contact"
                   />
                 </div>
+                {(studentProfile || tokenManager.getRole() === 'admin' || tokenManager.getRole() === 'super_admin') && (
+                  <div className="grid gap-2">
+                    <Label htmlFor="password">New Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) => handleInputChange('password', e.target.value)}
+                      placeholder="Leave blank to keep current password"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Must be at least 8 characters long
+                    </p>
+                  </div>
+                )}
               </div>
-              <div className="px-4">
-                <p className="text-xs text-muted-foreground text-center mb-3">
+              </div>
+              <div className="border-t px-6 py-4 flex-shrink-0">
+                <p className="text-xs text-muted-foreground text-center mb-4">
                   Need to change other details? Contact your teacher for assistance.
                 </p>
-              </div>
-              <div className="flex gap-2 pt-2 px-4">
-                <Button onClick={handleSave} disabled={isSaving}>
-                  {isSaving ? 'Saving...' : 'Save Changes'}
-                </Button>
-                <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+                <div className="flex gap-2 justify-center">
+                  <Button onClick={handleSave} disabled={isSaving}>
+                    {isSaving ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                  <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+                </div>
               </div>
             </SheetContent>
           </Sheet>
+          )}
         </div>
       </CardHeader>
 
       <CardContent className="space-y-3 flex-1">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Mail className="h-4 w-4" />
-          <span>{user.email}</span>
+          <span>{displayUser?.email || 'N/A'}</span>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Phone className="h-4 w-4" />
-          <span>{user.phone || 'Not provided'}</span>
+          <span>{displayUser?.phone || 'Not provided'}</span>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <User className="h-4 w-4" />
-          <span>Emergency: {user.emergency_contact || 'Not provided'}</span>
+          <span>Emergency: {displayUser?.emergency_contact || 'Not provided'}</span>
         </div>
       </CardContent>
       

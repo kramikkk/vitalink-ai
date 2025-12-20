@@ -277,9 +277,101 @@ def get_all_students(
             "avatar_url": student.avatar_url,
             "phone": student.phone,
             "emergency_contact": student.emergency_contact,
+            "role": student.role,
         }
         for student in students
     ]
+
+
+@router.get("/admins", response_model=list)
+def get_all_admins(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.SUPER_ADMIN]))
+):
+    """
+    Get all admins. Only accessible by admins and super admins.
+    """
+    admins = db.query(User).filter(User.role == "admin").all()
+    
+    return [
+        {
+            "id": admin.id,
+            "full_name": admin.full_name,
+            "username": admin.username,
+            "admin_id": admin.admin_id,
+            "email": admin.email,
+            "avatar_url": admin.avatar_url,
+            "phone": admin.phone,
+            "emergency_contact": admin.emergency_contact,
+            "role": admin.role,
+        }
+        for admin in admins
+    ]
+
+
+@router.get("/super-admins", response_model=list)
+def get_all_super_admins(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.SUPER_ADMIN]))
+):
+    """
+    Get all super admins. Only accessible by admins and super admins.
+    """
+    super_admins = db.query(User).filter(User.role == "super_admin").all()
+    
+    return [
+        {
+            "id": sa.id,
+            "full_name": sa.full_name,
+            "username": sa.username,
+            "admin_id": sa.admin_id,
+            "email": sa.email,
+            "avatar_url": sa.avatar_url,
+            "phone": sa.phone,
+            "emergency_contact": sa.emergency_contact,
+            "role": sa.role,
+        }
+        for sa in super_admins
+    ]
+
+
+@router.delete("/users/{user_id}")
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.SUPER_ADMIN]))
+):
+    """
+    Delete a user. Admins can only delete students. Super admins can delete students and admins.
+    """
+    user_to_delete = db.query(User).filter(User.id == user_id).first()
+    if not user_to_delete:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Prevent self-deletion
+    if user_to_delete.id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+    
+    # Check permissions
+    if current_user.role == "admin":
+        # Admins can only delete students
+        if user_to_delete.role != "student":
+            raise HTTPException(
+                status_code=403, 
+                detail="Admins can only delete student accounts"
+            )
+    elif current_user.role == "super_admin":
+        # Super admins cannot delete other super admins
+        if user_to_delete.role == "super_admin":
+            raise HTTPException(
+                status_code=403, 
+                detail="Cannot delete super admin accounts"
+            )
+    
+    db.delete(user_to_delete)
+    db.commit()
+    
+    return {"message": "User deleted successfully", "deleted_user_id": user_id}
 
 
 @router.put("/users/{user_id}/update")

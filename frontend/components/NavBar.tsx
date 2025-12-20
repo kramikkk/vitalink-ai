@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { LogOut, CircleUser, Bell, Settings, Users } from "lucide-react"
+import { LogOut, CircleUser, Bell, Settings, Users, Radio } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -19,12 +19,14 @@ import { AnimatedThemeToggler } from "./ui/animated-theme-toggler"
 import { tokenManager, UserRole } from "@/lib/api"
 import { useUser } from "@/contexts/UserContext"
 import { UserManagementDialog } from "./UserManagementDialog"
+import { PairDeviceDialog } from "./PairDeviceDialog"
 
 const NavBar = () => {
   const { user, isLoading } = useUser()
   const router = useRouter()
   const [avatarUrl, setAvatarUrl] = useState('')
   const [userManagementOpen, setUserManagementOpen] = useState(false)
+  const [pairDeviceOpen, setPairDeviceOpen] = useState(false)
 
   useEffect(() => {
     if (user?.avatar_url) {
@@ -57,6 +59,7 @@ const NavBar = () => {
   }
 
   const isAdminOrSuperAdmin = user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN
+  const isStudent = user?.role === UserRole.STUDENT
 
   if (isLoading || !user) {
     return (
@@ -128,6 +131,12 @@ const NavBar = () => {
                 <CircleUser />
                 Profile
               </DropdownMenuItem>
+              {isStudent && (
+                <DropdownMenuItem onClick={() => setPairDeviceOpen(true)}>
+                  <Radio />
+                  Pair Device
+                </DropdownMenuItem>
+              )}
               {isAdminOrSuperAdmin && (
                 <DropdownMenuItem onClick={() => setUserManagementOpen(true)}>
                   <Users />
@@ -148,6 +157,12 @@ const NavBar = () => {
       <UserManagementDialog
         open={userManagementOpen}
         onOpenChange={setUserManagementOpen}
+      />
+
+      {/* Pair Device Dialog */}
+      <PairDeviceDialog
+        open={pairDeviceOpen}
+        onOpenChange={setPairDeviceOpen}
       />
     </nav> 
   )

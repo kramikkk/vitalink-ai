@@ -22,7 +22,7 @@ const members = [
     {
         name: 'Jhun Mark E. Canlas',
         role: 'Hardware Engineer',
-        avatar: '/',
+        avatar: '/https://avatars.githubusercontent.com/u/250553429?v=4',
     },
 ]
 

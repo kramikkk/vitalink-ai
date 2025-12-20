@@ -36,7 +36,7 @@ const students = [
 	},
 ]
 
-const TeacherPage = () => {
+const AdminPage = () => {
 	const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
 	const [searchQuery, setSearchQuery] = useState("")
 	const [open, setOpen] = useState(false)
@@ -59,7 +59,7 @@ const TeacherPage = () => {
 					<div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
 						<div className="flex-1 flex flex-col justify-center">
 							<CardTitle className="text-xl sm:text-2xl lg:text-3xl">
-								IoT Health & Activity Dashboard for Teacher
+								IoT Health & Activity Dashboard for Admin
 							</CardTitle>
 							<CardDescription className="text-sm sm:text-base">
 								View and monitor individual student health metrics
@@ -211,4 +211,4 @@ const TeacherPage = () => {
 	)
 }
 
-export default TeacherPage
+export default AdminPage

@@ -113,6 +113,56 @@ export const authApi = {
 
     return response.json();
   },
+
+  // Get all admins (admin/super admin only)
+  async getAdmins(token: string): Promise<UserProfile[]> {
+    const response = await fetch(`${API_BASE_URL}/auth/admins`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch admins');
+    }
+
+    return response.json();
+  },
+
+  // Get all super admins (admin/super admin only)
+  async getSuperAdmins(token: string): Promise<UserProfile[]> {
+    const response = await fetch(`${API_BASE_URL}/auth/super-admins`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch super admins');
+    }
+
+    return response.json();
+  },
+
+  // Delete a user (admin/super admin only)
+  async deleteUser(userId: number, token: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/auth/users/${userId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Failed to delete user');
+    }
+  },
 };
 
 // Token management

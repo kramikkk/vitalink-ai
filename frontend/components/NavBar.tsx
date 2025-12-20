@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { LogOut, CircleUser, Bell, Settings } from "lucide-react"
+import { LogOut, CircleUser, Bell, Settings, Users } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -16,13 +16,15 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { ModeToggle } from "./ModeToggle"
 import { AnimatedThemeToggler } from "./ui/animated-theme-toggler"
-import { tokenManager } from "@/lib/api"
+import { tokenManager, UserRole } from "@/lib/api"
 import { useUser } from "@/contexts/UserContext"
+import { UserManagementDialog } from "./UserManagementDialog"
 
 const NavBar = () => {
   const { user, isLoading } = useUser()
   const router = useRouter()
   const [avatarUrl, setAvatarUrl] = useState('')
+  const [userManagementOpen, setUserManagementOpen] = useState(false)
 
   useEffect(() => {
     if (user?.avatar_url) {
@@ -53,6 +55,8 @@ const NavBar = () => {
     const event = new CustomEvent('openProfileEdit')
     window.dispatchEvent(event)
   }
+
+  const isAdminOrSuperAdmin = user?.role === UserRole.ADMIN || user?.role === UserRole.SUPER_ADMIN
 
   if (isLoading || !user) {
     return (
@@ -124,6 +128,12 @@ const NavBar = () => {
                 <CircleUser />
                 Profile
               </DropdownMenuItem>
+              {isAdminOrSuperAdmin && (
+                <DropdownMenuItem onClick={() => setUserManagementOpen(true)}>
+                  <Users />
+                  User Management
+                </DropdownMenuItem>
+              )}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onClick={handleLogout}>
@@ -133,6 +143,12 @@ const NavBar = () => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* User Management Dialog */}
+      <UserManagementDialog
+        open={userManagementOpen}
+        onOpenChange={setUserManagementOpen}
+      />
     </nav> 
   )
 }

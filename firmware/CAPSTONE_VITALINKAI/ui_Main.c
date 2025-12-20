@@ -96,29 +96,29 @@ ui_BPM_VALUE = lv_label_create(ui_Main);
 lv_obj_set_width( ui_BPM_VALUE, LV_SIZE_CONTENT);  /// 1
 lv_obj_set_height( ui_BPM_VALUE, LV_SIZE_CONTENT);   /// 1
 lv_obj_set_x( ui_BPM_VALUE, 0 );
-lv_obj_set_y( ui_BPM_VALUE, -30 );
+lv_obj_set_y( ui_BPM_VALUE, -35 );
 lv_obj_set_align( ui_BPM_VALUE, LV_ALIGN_CENTER );
 lv_label_set_text(ui_BPM_VALUE,"100");
 lv_obj_set_style_text_color(ui_BPM_VALUE, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT );
 lv_obj_set_style_text_opa(ui_BPM_VALUE, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
-lv_obj_set_style_text_font(ui_BPM_VALUE, &lv_font_montserrat_48, LV_PART_MAIN| LV_STATE_DEFAULT);
+lv_obj_set_style_text_font(ui_BPM_VALUE, &lv_font_montserrat_38, LV_PART_MAIN| LV_STATE_DEFAULT);
 
 ui_ACTIVITY_LABEL = lv_label_create(ui_Main);
 lv_obj_set_width( ui_ACTIVITY_LABEL, LV_SIZE_CONTENT);  /// 1
 lv_obj_set_height( ui_ACTIVITY_LABEL, LV_SIZE_CONTENT);   /// 1
 lv_obj_set_x( ui_ACTIVITY_LABEL, -40 );
-lv_obj_set_y( ui_ACTIVITY_LABEL, 20 );
+lv_obj_set_y( ui_ACTIVITY_LABEL, 10 );
 lv_obj_set_align( ui_ACTIVITY_LABEL, LV_ALIGN_CENTER );
 lv_label_set_text(ui_ACTIVITY_LABEL,"Activity");
 lv_obj_set_style_text_color(ui_ACTIVITY_LABEL, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT );
 lv_obj_set_style_text_opa(ui_ACTIVITY_LABEL, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
-lv_obj_set_style_text_font(ui_ACTIVITY_LABEL, &lv_font_montserrat_14, LV_PART_MAIN| LV_STATE_DEFAULT);
+lv_obj_set_style_text_font(ui_ACTIVITY_LABEL, &lv_font_montserrat_16, LV_PART_MAIN| LV_STATE_DEFAULT);
 
 ui_ACTIVITY_VALUE = lv_label_create(ui_Main);
 lv_obj_set_width( ui_ACTIVITY_VALUE, LV_SIZE_CONTENT);  /// 1
 lv_obj_set_height( ui_ACTIVITY_VALUE, LV_SIZE_CONTENT);   /// 1
 lv_obj_set_x( ui_ACTIVITY_VALUE, -40 );
-lv_obj_set_y( ui_ACTIVITY_VALUE, 45 );
+lv_obj_set_y( ui_ACTIVITY_VALUE, 40 );
 lv_obj_set_align( ui_ACTIVITY_VALUE, LV_ALIGN_CENTER );
 lv_label_set_text(ui_ACTIVITY_VALUE,"50");
 lv_obj_set_style_text_color(ui_ACTIVITY_VALUE, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT );
@@ -129,7 +129,7 @@ ui_STRESS_LABEL = lv_label_create(ui_Main);
 lv_obj_set_width( ui_STRESS_LABEL, LV_SIZE_CONTENT);  /// 1
 lv_obj_set_height( ui_STRESS_LABEL, LV_SIZE_CONTENT);   /// 1
 lv_obj_set_x( ui_STRESS_LABEL, 40 );
-lv_obj_set_y( ui_STRESS_LABEL, 20 );
+lv_obj_set_y( ui_STRESS_LABEL, 10 );
 lv_obj_set_align( ui_STRESS_LABEL, LV_ALIGN_CENTER );
 lv_label_set_text(ui_STRESS_LABEL,"Stress");
 lv_obj_set_style_text_color(ui_STRESS_LABEL, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT );
@@ -140,7 +140,7 @@ ui_STRESS_VALUE = lv_label_create(ui_Main);
 lv_obj_set_width( ui_STRESS_VALUE, LV_SIZE_CONTENT);  /// 1
 lv_obj_set_height( ui_STRESS_VALUE, LV_SIZE_CONTENT);   /// 1
 lv_obj_set_x( ui_STRESS_VALUE, 40 );
-lv_obj_set_y( ui_STRESS_VALUE, 45 );
+lv_obj_set_y( ui_STRESS_VALUE, 40 );
 lv_obj_set_align( ui_STRESS_VALUE, LV_ALIGN_CENTER );
 lv_label_set_text(ui_STRESS_VALUE,"50");
 lv_obj_set_style_text_color(ui_STRESS_VALUE, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT );

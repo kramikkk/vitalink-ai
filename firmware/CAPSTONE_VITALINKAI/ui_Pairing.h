@@ -3,18 +3,20 @@
 // LVGL version: 8.3.11
 // Project name: Capstone_Display
 
-#ifndef UI_SPLASH_H
-#define UI_SPLASH_H
+#ifndef UI_PAIRING_H
+#define UI_PAIRING_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// SCREEN: ui_Splash
-extern void ui_Splash_screen_init(void);
-extern void ui_Splash_screen_destroy(void);
-extern lv_obj_t *ui_Splash;
-extern lv_obj_t *ui_Image8;
+// SCREEN: ui_Pairing
+extern void ui_Pairing_screen_init(void);
+extern void ui_Pairing_screen_destroy(void);
+extern lv_obj_t *ui_Pairing;
+extern lv_obj_t *ui_Title;
+extern lv_obj_t *ui_Code;
+extern lv_obj_t *ui_Subtitle;
 // CUSTOM VARIABLES
 
 #ifdef __cplusplus

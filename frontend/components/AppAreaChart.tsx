@@ -25,88 +25,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { metricsApi, tokenManager } from "@/lib/api"
 
 export const description = "An interactive area chart"
-
-
-// Generate comprehensive mock data for testing all time filters
-const generateMockData = () => {
-  const data: Array<{date: string, HeartRate: number, ActivityLevel: number, StressLevel: number}> = []
-  const now = new Date()
-  
-  // Start from 12 months ago and work forward to avoid overlaps
-  const startDate = new Date(now)
-  startDate.setMonth(startDate.getMonth() - 12)
-  
-  // Generate data from oldest to newest to ensure proper chronological order
-  const currentDate = new Date(startDate)
-  
-  // Phase 1: monthly data for months 12-2 (older historical data)
-  while (currentDate < new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)) {
-    data.push({
-      date: new Date(currentDate).toISOString(),
-      HeartRate: Math.floor(60 + Math.random() * 40),
-      ActivityLevel: Math.floor(30 + Math.random() * 60),
-      StressLevel: Math.floor(20 + Math.random() * 60),
-    })
-    currentDate.setDate(currentDate.getDate() + 1)
-  }
-  
-  // Phase 2: daily data for last 30 days
-  currentDate.setTime(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-  while (currentDate < new Date(now.getTime() - 24 * 60 * 60 * 1000)) {
-    data.push({
-      date: new Date(currentDate).toISOString(),
-      HeartRate: Math.floor(65 + Math.random() * 30 + Math.sin(currentDate.getTime() / 100000) * 10),
-      ActivityLevel: Math.floor(40 + Math.random() * 50 + Math.cos(currentDate.getTime() / 80000) * 15),
-      StressLevel: Math.floor(25 + Math.random() * 50 + Math.sin(currentDate.getTime() / 120000) * 10),
-    })
-    currentDate.setHours(currentDate.getHours() + 1)
-  }
-  
-  // Phase 3: Per-hour data for last 24 hours
-  currentDate.setTime(now.getTime() - 24 * 60 * 60 * 1000)
-  // Round down to the start of the hour (XX:00:00)
-  currentDate.setMinutes(0, 0, 0)
-  while (currentDate < new Date(now.getTime() - 60 * 60 * 1000)) {
-    data.push({
-      date: new Date(currentDate).toISOString(),
-      HeartRate: Math.floor(68 + Math.random() * 25 + Math.sin(currentDate.getTime() / 50000) * 8),
-      ActivityLevel: Math.floor(45 + Math.random() * 40 + Math.cos(currentDate.getTime() / 40000) * 12),
-      StressLevel: Math.floor(30 + Math.random() * 45 + Math.sin(currentDate.getTime() / 60000) * 8),
-    })
-    currentDate.setHours(currentDate.getHours() + 1)
-  }
-  
-  // Phase 4: Per-minute data for last hour
-  currentDate.setTime(now.getTime() - 60 * 60 * 1000)
-  while (currentDate < new Date(now.getTime() - 60 * 1000)) {
-    data.push({
-      date: new Date(currentDate).toISOString(),
-      HeartRate: Math.floor(70 + Math.random() * 20 + Math.sin(currentDate.getTime() / 30000) * 5),
-      ActivityLevel: Math.floor(50 + Math.random() * 35 + Math.cos(currentDate.getTime() / 25000) * 10),
-      StressLevel: Math.floor(35 + Math.random() * 40 + Math.sin(currentDate.getTime() / 35000) * 6),
-    })
-    currentDate.setSeconds(currentDate.getSeconds() + 1)
-  }
-  
-  // Phase 5: Per-second data for last minute (live data)
-  currentDate.setTime(now.getTime() - 60 * 1000)
-  while (currentDate <= now) {
-    data.push({
-      date: new Date(currentDate).toISOString(),
-      HeartRate: Math.floor(72 + Math.random() * 16 + Math.sin(currentDate.getTime() / 5000) * 4),
-      ActivityLevel: Math.floor(55 + Math.random() * 25 + Math.cos(currentDate.getTime() / 4000) * 8),
-      StressLevel: Math.floor(40 + Math.random() * 30 + Math.sin(currentDate.getTime() / 6000) * 5),
-    })
-    currentDate.setSeconds(currentDate.getSeconds() + 1)
-  }
-  
-  return data
-}
-
-const chartData = generateMockData();
-
 
 const chartConfig = {
   HeartRate: {
@@ -141,70 +62,96 @@ export function AppAreaChart({
   timeRange = "live",
   student
 }: AppAreaChartProps = {}) {
+  const [chartData, setChartData] = React.useState<Array<{date: string, HeartRate: number, ActivityLevel: number, StressLevel: number}>>([])
+  const [loading, setLoading] = React.useState(true)
 
-  // Filter data based on time range
-  // In production: Replace chartData with API call to fetch data from database
-  // The database stores sensor data per second
-  const filteredData = React.useMemo(() => {
-    // For mock data, use the latest date in the dataset as reference
-    const referenceDate = new Date(
-      Math.max(...chartData.map((d) => new Date(d.date).getTime()))
-    )
-    const startDate = new Date(referenceDate)
-    
-    switch(timeRange) {
-      case "live":
-        // Last 60 seconds - fetch raw per-second data from DB
-        startDate.setSeconds(startDate.getSeconds() - 60)
-        break
-      case "1h":
-        // Last 1 hour - fetch per-second data, will be averaged per minute
-        startDate.setHours(startDate.getHours() - 1)
-        break
-      case "24h":
-        // Last 24 hours - fetch per-second data, will be averaged per hour
-        startDate.setHours(startDate.getHours() - 24)
-        break
-      case "7d":
-        // Last 7 days - fetch per-second data, will be averaged per day
-        startDate.setDate(startDate.getDate() - 7)
-        break
-      case "30d":
-        // Last 30 days - fetch per-second data, will be averaged per day
-        startDate.setDate(startDate.getDate() - 30)
-        break
-      case "12mo":
-        // Last 12 months - fetch per-second data, will be averaged per month
-        startDate.setMonth(startDate.getMonth() - 12)
-        break
-      default:
-        startDate.setDate(startDate.getDate() - 7)
+  // Fetch data from backend based on time range
+  React.useEffect(() => {
+    const fetchData = async () => {
+      const token = tokenManager.getToken()
+      if (!token) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        setLoading(true)
+        const now = new Date()
+        let startTime: Date
+        
+        // Calculate start time based on time range
+        switch(timeRange) {
+          case "live":
+            startTime = new Date(now.getTime() - 60 * 1000) // Last 60 seconds
+            break
+          case "1h":
+            startTime = new Date(now.getTime() - 60 * 60 * 1000) // Last 1 hour
+            break
+          case "24h":
+            startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000) // Last 24 hours
+            break
+          case "7d":
+            startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
+            break
+          case "30d":
+            startTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+            break
+          case "12mo":
+            startTime = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000) // Last 12 months
+            break
+          default:
+            startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+        }
+
+        const metrics = await metricsApi.getMetricsHistory(
+          token,
+          startTime.toISOString(),
+          now.toISOString(),
+          10000 // Fetch up to 10000 records
+        )
+
+        // Transform backend data to chart format
+        const transformedData = metrics.map(m => ({
+          date: m.timestamp,
+          HeartRate: Math.round(m.heart_rate),
+          ActivityLevel: Math.round(m.motion_intensity),
+          StressLevel: Math.round(m.anomaly_score * 100)
+        }))
+
+        setChartData(transformedData)
+      } catch (error) {
+        console.error('Error fetching metrics history:', error)
+        setChartData([])
+      } finally {
+        setLoading(false)
+      }
     }
-    
-    // TODO: Replace with actual API call
-    // Example: const data = await fetch(`/api/sensor-data?startDate=${startDate.toISOString()}&endDate=${referenceDate.toISOString()}`)
-    return chartData.filter((item) => {
-      const date = new Date(item.date)
-      return date >= startDate && date <= referenceDate
-    })
+
+    fetchData()
+
+    // Auto-refresh for live mode
+    if (timeRange === "live") {
+      const interval = setInterval(fetchData, 1000) // Refresh every second for live data
+      return () => clearInterval(interval)
+    }
   }, [timeRange])
 
   // Aggregate data based on time range
   // Process raw per-second data from database according to filter requirements
   const processedData = React.useMemo(() => {
-    if (filteredData.length === 0) return []
+    if (chartData.length === 0) return []
 
     switch(timeRange) {
       case "live":
         // Display raw per-second values - no aggregation needed
         // Shows real-time data as it comes from sensors (stored per second in DB)
-        return filteredData
+        return chartData
       
       case "1h": {
         // Average per minute - group 60 per-second readings into 1-minute averages
         // Takes all per-second data from last hour and calculates average per minute
         const grouped = new Map<string, typeof chartData>()
-        filteredData.forEach(item => {
+        chartData.forEach(item => {
           const date = new Date(item.date)
           // Group by minute (YYYY-MM-DD HH:mm)
           const minuteKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
@@ -228,7 +175,7 @@ export function AppAreaChart({
         // Average per hour - group 3600 per-second readings into 1-hour averages
         // Takes all per-second data from last 24 hours and calculates average per hour
         const grouped = new Map<string, typeof chartData>()
-        filteredData.forEach(item => {
+        chartData.forEach(item => {
           const date = new Date(item.date)
           // Group by hour (YYYY-MM-DD HH)
           const hourKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}`
@@ -253,7 +200,7 @@ export function AppAreaChart({
         // Average per day - group 86400 per-second readings into 1-day averages
         // Takes all per-second data from last 7/30 days and calculates average per day
         const grouped = new Map<string, typeof chartData>()
-        filteredData.forEach(item => {
+        chartData.forEach(item => {
           const date = new Date(item.date)
           // Group by day (YYYY-MM-DD)
           const dayKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
@@ -277,7 +224,7 @@ export function AppAreaChart({
         // Average per month - group all per-second readings into monthly averages
         // Takes all per-second data from last 12 months and calculates average per month
         const grouped = new Map<string, typeof chartData>()
-        filteredData.forEach(item => {
+        chartData.forEach(item => {
           const date = new Date(item.date)
           // Group by month (YYYY-MM)
           const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
@@ -298,9 +245,9 @@ export function AppAreaChart({
       }
       
       default:
-        return filteredData
+        return chartData
     }
-  }, [filteredData, timeRange])
+  }, [chartData, timeRange])
 
   // Calculate statistics (min, max, avg) based on the filtered time range
   // Min/Max are calculated from the processed (aggregated) data points
@@ -337,7 +284,7 @@ export function AppAreaChart({
             const minuteStart = new Date(date)
             const minuteEnd = new Date(date)
             minuteEnd.setMinutes(minuteEnd.getMinutes() + 1)
-            relevantData = filteredData.filter(item => {
+            relevantData = chartData.filter(item => {
               const itemDate = new Date(item.date)
               return itemDate >= minuteStart && itemDate < minuteEnd
             })
@@ -348,7 +295,7 @@ export function AppAreaChart({
             const hourStart = new Date(date)
             const hourEnd = new Date(date)
             hourEnd.setHours(hourEnd.getHours() + 1)
-            relevantData = filteredData.filter(item => {
+            relevantData = chartData.filter(item => {
               const itemDate = new Date(item.date)
               return itemDate >= hourStart && itemDate < hourEnd
             })
@@ -361,7 +308,7 @@ export function AppAreaChart({
             dayStart.setHours(0, 0, 0, 0)
             const dayEnd = new Date(dayStart)
             dayEnd.setDate(dayEnd.getDate() + 1)
-            relevantData = filteredData.filter(item => {
+            relevantData = chartData.filter(item => {
               const itemDate = new Date(item.date)
               return itemDate >= dayStart && itemDate < dayEnd
             })
@@ -374,7 +321,7 @@ export function AppAreaChart({
             monthStart.setHours(0, 0, 0, 0)
             const monthEnd = new Date(monthStart)
             monthEnd.setMonth(monthEnd.getMonth() + 1)
-            relevantData = filteredData.filter(item => {
+            relevantData = chartData.filter(item => {
               const itemDate = new Date(item.date)
               return itemDate >= monthStart && itemDate < monthEnd
             })
@@ -474,7 +421,7 @@ export function AppAreaChart({
                       <p className="font-semibold">Avg: {currentValue}{unit}</p>
                       {metricStats && (
                         <p className="text-muted-foreground">
-                          Min: {metricStats.min}{unit} | Max: {metricStats.max}{unit}
+                          Max: {metricStats.max}{unit}
                         </p>
                       )}
                     </>
@@ -493,7 +440,7 @@ export function AppAreaChart({
       <CardHeader className="flex-shrink-0 border-b">
         <CardTitle>Wellness Trend Chart</CardTitle>
         <CardDescription>
-          Live and historical data of user.
+          {loading ? "Loading data..." : `Showing ${processedData.length} data points`}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 px-2 pt-4 sm:px-6 sm:pt-6 min-h-0">

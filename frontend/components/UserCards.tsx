@@ -25,20 +25,25 @@ interface UserCardsProps {
 }
 
 export function UserCards({ 
-  heartRate = 101, 
-  activityLevel = 58, 
-  stressLevel = 21,
+  heartRate = 0, 
+  activityLevel = 0, 
+  stressLevel = 0,
   student
 }: UserCardsProps = {}) {
   
+  // Check if we have any data
+  const hasData = heartRate > 0 || activityLevel > 0 || stressLevel > 0
+  
   // Heart Rate: Low (<60), Normal (60-100), High (>100)
   const getHeartRateColor = (value: number) => {
+    if (value === 0) return "text-muted-foreground"
     if (value < 60) return "text-yellow-500"
     if (value > 100) return "text-red-500"
     return "text-green-500"
   }
   
   const getHeartRateStatus = (value: number) => {
+    if (value === 0) return "No Data"
     if (value < 60) return "Low"
     if (value > 100) return "High"
     return "Normal"
@@ -46,12 +51,14 @@ export function UserCards({
 
   // Activity Level: Low (<40), Normal (40-70), High (>70)
   const getActivityColor = (value: number) => {
+    if (value === 0) return "text-muted-foreground"
     if (value < 40) return "text-green-500"
     if (value > 70) return "text-red-500"
     return "text-yellow-500"
   }
   
   const getActivityStatus = (value: number) => {
+    if (value === 0) return "No Data"
     if (value < 40) return "Low"
     if (value > 70) return "High"
     return "Moderate"
@@ -59,12 +66,14 @@ export function UserCards({
 
   // Stress Level: Low (<30), Normal (30-60), High (>60)
   const getStressColor = (value: number) => {
+    if (value === 0) return "text-muted-foreground"
     if (value < 30) return "text-green-500"
     if (value > 60) return "text-red-500"
     return "text-yellow-500"
   }
   
   const getStressStatus = (value: number) => {
+    if (value === 0) return "No Data"
     if (value < 30) return "Low"
     if (value > 60) return "High"
     return "Moderate"
@@ -81,7 +90,7 @@ export function UserCards({
               <Heart className="size-4" />
             </CardDescription>
             <CardTitle className="text-2xl lg:text-3xl font-semibold tabular-nums whitespace-nowrap mb-2 sm:mb-0">
-              {heartRate} BPM
+              {heartRate > 0 ? `${heartRate} BPM` : "--"}
             </CardTitle>
           </div>
         </CardHeader>
@@ -107,7 +116,7 @@ export function UserCards({
               <Activity className="size-4" />
             </CardDescription>
             <CardTitle className="text-2xl lg:text-3xl font-semibold tabular-nums truncate mb-2 sm:mb-0">
-              {activityLevel}%
+              {activityLevel > 0 ? `${activityLevel}%` : "--"}
             </CardTitle>
           </div>
         </CardHeader>
@@ -130,7 +139,7 @@ export function UserCards({
               <Brain className="size-4" />
             </CardDescription>
             <CardTitle className="text-2xl lg:text-3xl font-semibold tabular-nums truncate mb-2 sm:mb-0">
-              {stressLevel}%
+              {stressLevel > 0 ? `${stressLevel}%` : "--"}
             </CardTitle>
           </div>
           <div className="flex flex-col items-end gap-1 flex-shrink-0">

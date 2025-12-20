@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { UserCards } from "@/components/UserCards"
 import { AppAreaChart } from "@/components/AppAreaChart"
 import AlertCards from "@/components/AlertCards"
@@ -8,7 +8,7 @@ import UserProfileCard from "@/components/UserProfileCard"
 import { ChartFilters } from "@/components/ChartFilters"
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { useRoleProtection } from "@/hooks/use-role-protection"
-import { UserRole } from "@/lib/api"
+import { UserRole, metricsApi, tokenManager } from "@/lib/api"
 
 const page = () => {
   // Protect this route - only allow STUDENT role
@@ -16,6 +16,40 @@ const page = () => {
   
   const [selectedMetric, setSelectedMetric] = useState<"All" | "HeartRate" | "ActivityLevel" | "StressLevel">("All")
   const [timeRange, setTimeRange] = useState("live")
+  
+  // Metrics state
+  const [heartRate, setHeartRate] = useState<number>(0)
+  const [activityLevel, setActivityLevel] = useState<number>(0)
+  const [stressLevel, setStressLevel] = useState<number>(0)
+
+  // Fetch metrics from backend
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      const token = tokenManager.getToken()
+      if (!token) return
+
+      try {
+        const metrics = await metricsApi.getLatestMetrics(token)
+        if (metrics && metrics.length > 0) {
+          const latest = metrics[0] // Get the most recent metric
+          setHeartRate(Math.round(latest.heart_rate))
+          setActivityLevel(Math.round(latest.motion_intensity))
+          // Calculate stress level from anomaly score (0-100 range)
+          setStressLevel(Math.round(latest.anomaly_score * 100))
+        }
+      } catch (error) {
+        console.error('Error fetching metrics:', error)
+      }
+    }
+
+    // Fetch immediately
+    fetchMetrics()
+
+    // Then fetch every 1 second for real-time updates
+    const interval = setInterval(fetchMetrics, 1000)
+
+    return () => clearInterval(interval)
+  }, [])
 
   return (
     <div className="min-h-[calc(100vh-4rem)] lg:h-[calc(100vh-4rem)] pb-4 flex flex-col gap-4 overflow-y-auto lg:overflow-hidden">
@@ -47,7 +81,11 @@ const page = () => {
         <div className="flex-1 min-w-0 flex flex-col gap-4 lg:min-h-0 lg:overflow-y-auto">
           {/* UserCards takes natural height */}
           <div className="flex-shrink-0">
-            <UserCards />
+            <UserCards 
+              heartRate={heartRate} 
+              activityLevel={activityLevel} 
+              stressLevel={stressLevel}
+            />
           </div>
           {/* AppAreaChart fills remaining space */}
           <div className="flex-1 min-h-[400px]">

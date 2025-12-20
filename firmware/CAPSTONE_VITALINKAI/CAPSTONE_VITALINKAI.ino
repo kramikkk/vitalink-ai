@@ -33,6 +33,10 @@ unsigned long lastPairingCheck = 0;
 const unsigned long PAIRING_CHECK_INTERVAL = 1000;  // Check every 1 second when not paired
 const unsigned long PAIRED_CHECK_INTERVAL = 1000;   // Check every 1 second when paired
 
+/* ===================== SENSOR DATA TRANSMISSION ===================== */
+unsigned long lastDataSend = 0;
+const unsigned long DATA_SEND_INTERVAL = 1000;  // Send data every 1 second
+
 const char* BACKEND_URL = "http://172.20.10.3:8000";
 
 /*--------------------------------- GC9A01 DISPLAY ---------------------------------*/
@@ -365,6 +369,38 @@ bool checkPairingStatus() {
     
     http.end();
     return paired;
+}
+
+void sendSensorData(int heartRate, int motionIntensity) {
+    if (WiFi.status() != WL_CONNECTED) return;
+    
+    HTTPClient http;
+    String url = String(BACKEND_URL) + "/metrics/sensor-data";
+    
+    http.begin(url);
+    http.addHeader("Content-Type", "application/json");
+    
+    String payload = "{";
+    payload += "\"device_id\":\"" + deviceId + "\",";
+    payload += "\"heart_rate\":" + String(heartRate) + ",";
+    payload += "\"motion_intensity\":" + String(motionIntensity);
+    payload += "}";
+    
+    int httpCode = http.POST(payload);
+    
+    if (httpCode > 0) {
+        if (httpCode == 200) {
+            Serial.println("Sensor data sent successfully");
+        } else {
+            Serial.printf("Sensor data send failed: HTTP %d\n", httpCode);
+            String response = http.getString();
+            Serial.println("Response: " + response);
+        }
+    } else {
+        Serial.printf("Sensor data send failed: %s\n", http.errorToString(httpCode).c_str());
+    }
+    
+    http.end();
 }
 
 void connectWiFi() {
@@ -735,5 +771,17 @@ void loop()
         if (ui_ACTIVITY) lv_arc_set_value(ui_ACTIVITY, intensity);
         if (ui_ACTIVITY_VALUE)
             lv_label_set_text_fmt(ui_ACTIVITY_VALUE, "%d", intensity);
+    }
+    
+    /* SEND SENSOR DATA TO BACKEND */
+    if (millis() - lastDataSend >= DATA_SEND_INTERVAL) {
+        lastDataSend = millis();
+        
+        // Send data even if beatAvg is 0 (allows motion-only data)
+        int currentIntensity = smoothed * 100;
+        sendSensorData(beatAvg, currentIntensity);
+        
+        // Debug output
+        Serial.printf("Sending: HR=%d, Motion=%d\n", beatAvg, currentIntensity);
     }
 }

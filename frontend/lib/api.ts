@@ -213,3 +213,68 @@ export const tokenManager = {
     }
   },
 };
+
+// Metrics types
+export interface MetricData {
+  id: number;
+  heart_rate: number;
+  motion_intensity: number;
+  prediction: string;
+  anomaly_score: number;
+  confidence_normal: number;
+  confidence_anomaly: number;
+  timestamp: string;
+}
+
+// Metrics API functions
+export const metricsApi = {
+  // Get latest metrics for current user
+  async getLatestMetrics(token: string): Promise<MetricData[]> {
+    const response = await fetch(`${API_BASE_URL}/metrics/latest`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return []; // No data available yet
+      }
+      throw new Error('Failed to fetch metrics');
+    }
+
+    return response.json();
+  },
+
+  // Get metrics history with time range
+  async getMetricsHistory(
+    token: string,
+    startTime?: string,
+    endTime?: string,
+    limit?: number
+  ): Promise<MetricData[]> {
+    const params = new URLSearchParams();
+    if (startTime) params.append('start_time', startTime);
+    if (endTime) params.append('end_time', endTime);
+    if (limit) params.append('limit', limit.toString());
+
+    const response = await fetch(`${API_BASE_URL}/metrics/history?${params}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return []; // No data available yet
+      }
+      throw new Error('Failed to fetch metrics history');
+    }
+
+    return response.json();
+  },
+};

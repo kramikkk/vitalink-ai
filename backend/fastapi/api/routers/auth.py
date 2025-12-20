@@ -4,8 +4,8 @@ from pydantic import BaseModel, EmailStr
 from datetime import timedelta
 from database import get_db
 from models_db import User
-from models import UserLogin, Token
-from utils.auth_utils import hash_password, verify_password, create_access_token, get_current_user
+from models import UserLogin, Token, UserRole
+from utils.auth_utils import hash_password, verify_password, create_access_token, get_current_user, require_role
 
 router = APIRouter(tags=["Authentication"])
 
@@ -13,7 +13,7 @@ router = APIRouter(tags=["Authentication"])
 class SignupRequest(BaseModel):
     full_name: str
     username: str
-    student_id: str
+    student_id: str  # Required for students
     email: EmailStr
     password: str
     confirm_password: str
@@ -53,7 +53,8 @@ def signup(user: SignupRequest, db: Session = Depends(get_db)):
         username=user.username,
         student_id=user.student_id,
         email=user.email,
-        password=hashed_pw
+        password=hashed_pw,
+        role="student"  # Default role for signup
     )
 
     try:
@@ -66,7 +67,7 @@ def signup(user: SignupRequest, db: Session = Depends(get_db)):
 
     access_token = create_access_token(data={"sub": str(new_user.id)})
 
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "role": new_user.role}
 
 
 @router.post("/login", response_model=Token)
@@ -89,7 +90,7 @@ def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
         data={"sub": str(user.id)}, expires_delta=access_token_expires
     )
 
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "role": user.role}
 
 
 @router.get("/me", response_model=dict)
@@ -99,11 +100,73 @@ def get_current_user_profile(current_user: User = Depends(get_current_user)):
         "full_name": current_user.full_name,
         "username": current_user.username,
         "student_id": current_user.student_id,
+        "admin_id": current_user.admin_id,
         "email": current_user.email,
         "phone": current_user.phone,
         "emergency_contact": current_user.emergency_contact,
         "avatar_url": current_user.avatar_url,
+        "role": current_user.role,
     }
+
+class AdminSignupRequest(BaseModel):
+    full_name: str
+    username: str
+    admin_id: str  # Admin ID instead of student ID
+    email: EmailStr
+    password: str
+    confirm_password: str
+
+
+@router.post("/admin/signup", response_model=Token, status_code=status.HTTP_201_CREATED)
+def admin_signup(
+    user: AdminSignupRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN]))
+):
+    """
+    Register a new admin user. Only super admins can create admin accounts.
+    """
+    if user.password != user.confirm_password:
+        raise HTTPException(status_code=400, detail="Passwords do not match")
+    
+    if len(user.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters long")
+
+    existing_user = db.query(User).filter(User.email == user.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    existing_username = db.query(User).filter(User.username == user.username).first()
+    if existing_username:
+        raise HTTPException(status_code=400, detail="Username already taken")
+    
+    existing_admin_id = db.query(User).filter(User.admin_id == user.admin_id).first()
+    if existing_admin_id:
+        raise HTTPException(status_code=400, detail="Admin ID already registered")
+
+    hashed_pw = hash_password(user.password)
+
+    new_admin = User(
+        full_name=user.full_name,
+        username=user.username,
+        admin_id=user.admin_id,
+        email=user.email,
+        password=hashed_pw,
+        role="admin"
+    )
+
+    try:
+        db.add(new_admin)
+        db.commit()
+        db.refresh(new_admin)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to create admin user")
+
+    access_token = create_access_token(data={"sub": str(new_admin.id)})
+
+    return {"access_token": access_token, "token_type": "bearer", "role": new_admin.role}
+
 
 class ProfileUpdate(BaseModel):
     phone: str | None = None

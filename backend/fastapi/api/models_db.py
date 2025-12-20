@@ -11,9 +11,11 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     full_name = Column(String, nullable=False)
     username = Column(String, unique=True, index=True, nullable=False)
-    student_id = Column(String, unique=True, index=True, nullable=False)
+    student_id = Column(String, unique=True, index=True, nullable=True)  # Only for students
+    admin_id = Column(String, unique=True, index=True, nullable=True)  # Only for admins
     email = Column(String, unique=True, index=True, nullable=False)
     password = Column(String, nullable=False)
+    role = Column(String, nullable=False, default="student")
     phone = Column(String, nullable=True)
     emergency_contact = Column(String, nullable=True)
     avatar_url = Column(String, nullable=True)

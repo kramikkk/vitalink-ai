@@ -1,6 +1,13 @@
 // API base URL - change this in production
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+// User roles enum
+export enum UserRole {
+  STUDENT = 'student',
+  ADMIN = 'admin',
+  SUPER_ADMIN = 'super_admin'
+}
+
 // Types for authentication
 export interface LoginCredentials {
   email: string;
@@ -19,17 +26,20 @@ export interface SignupData {
 export interface AuthResponse {
   access_token: string;
   token_type: string;
+  role: UserRole;
 }
 
 export interface UserProfile {
   id: number;
   full_name: string;
   username: string;
-  student_id: string;
+  student_id: string | null;
+  admin_id: string | null;
   email: string;
   phone: string | null;
   emergency_contact: string | null;
   avatar_url: string | null;
+  role: UserRole;
 }
 
 // Auth API functions
@@ -103,9 +113,24 @@ export const tokenManager = {
     return null;
   },
 
+  setRole(role: UserRole) {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('user_role', role);
+    }
+  },
+
+  getRole(): UserRole | null {
+    if (typeof window !== 'undefined') {
+      const role = localStorage.getItem('user_role');
+      return role as UserRole | null;
+    }
+    return null;
+  },
+
   removeToken() {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('access_token');
+      localStorage.removeItem('user_role');
     }
   },
 

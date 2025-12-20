@@ -6,8 +6,10 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from database import get_db
 from models_db import User
+from models import UserRole
 import os
 from dotenv import load_dotenv
+from typing import List
 
 load_dotenv()
 
@@ -65,4 +67,23 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     if user is None:
         raise credentials_exception
     return user
+
+
+def require_role(allowed_roles: List[UserRole]):
+    """
+    Dependency to require specific user roles.
+    Usage: current_user: User = Depends(require_role([UserRole.ADMIN, UserRole.SUPER_ADMIN]))
+    """
+    def role_checker(current_user: User = Depends(get_current_user)):
+        # Convert string role to UserRole for comparison
+        user_role_str = current_user.role if isinstance(current_user.role, str) else current_user.role.value
+        allowed_role_values = [role.value for role in allowed_roles]
+        
+        if user_role_str not in allowed_role_values:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Access denied. Required roles: {allowed_role_values}"
+            )
+        return current_user
+    return role_checker
 

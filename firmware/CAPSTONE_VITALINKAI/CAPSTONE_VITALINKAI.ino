@@ -11,6 +11,7 @@
 #include "heartRate.h"
 
 #include <WiFi.h>
+#include <HTTPClient.h>
 #include <Preferences.h>
 
 /* ===================== WIFI ===================== */
@@ -20,8 +21,19 @@ WiFiServer wifiServer(80);
 bool wifiConnected = false;
 bool softAPStarted = false;
 unsigned long wifiStartTime = 0;
+unsigned long lastWiFiRetry = 0;
 
 #define WIFI_TIMEOUT 60000   // 1 minute
+#define WIFI_RETRY_INTERVAL 10000  // Retry every 10 seconds
+
+/* ===================== PAIRING ===================== */
+String pairingCode = "";
+String deviceId = "";
+unsigned long lastPairingCheck = 0;
+const unsigned long PAIRING_CHECK_INTERVAL = 1000;  // Check every 1 second when not paired
+const unsigned long PAIRED_CHECK_INTERVAL = 1000;   // Check every 1 second when paired
+
+const char* BACKEND_URL = "http://172.20.10.3:8000";
 
 /*--------------------------------- GC9A01 DISPLAY ---------------------------------*/
 static const uint16_t screenWidth  = 240;
@@ -31,9 +43,6 @@ static lv_disp_draw_buf_t draw_buf;
 static lv_color_t buf[ screenWidth * screenHeight / 10 ];
 
 TFT_eSPI tft = TFT_eSPI();
-
-/* 🔑 PAIRING FLAG (replace later with NVS / backend) */
-bool devicePaired = false;
 
 const char WIFI_HTML[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
@@ -264,6 +273,100 @@ void handleWiFiPortal() {
     client.stop();
 }
 
+String generatePairingCode() {
+    String code = "";
+    for (int i = 0; i < 6; i++) {
+        code += String(random(0, 10));
+    }
+    return code;
+}
+
+String generateDeviceId() {
+    // Generate unique device ID from ESP32 chip ID
+    uint64_t chipid = ESP.getEfuseMac();
+    String id = "VL-";
+    
+    // Extract bytes from chip ID (use bytes 0-2 for uniqueness)
+    uint8_t byte0 = (chipid >> 0) & 0xFF;
+    uint8_t byte1 = (chipid >> 8) & 0xFF;
+    uint8_t byte2 = (chipid >> 16) & 0xFF;
+    
+    // Format as hex
+    if (byte2 < 16) id += "0";
+    id += String(byte2, HEX);
+    if (byte1 < 16) id += "0";
+    id += String(byte1, HEX);
+    if (byte0 < 16) id += "0";
+    id += String(byte0, HEX);
+    
+    id.toUpperCase();
+    return id;
+}
+
+void sendPairingRequest() {
+    if (WiFi.status() != WL_CONNECTED) return;
+    
+    HTTPClient http;
+    String url = String(BACKEND_URL) + "/api/devices/pair";
+    
+    http.begin(url);
+    http.addHeader("Content-Type", "application/json");
+    
+    String payload = "{";
+    payload += "\"device_id\":\"" + deviceId + "\",";
+    payload += "\"pairing_code\":\"" + pairingCode + "\"";
+    payload += "}";
+    
+    int httpCode = http.POST(payload);
+    
+    if (httpCode > 0) {
+        Serial.printf("Pairing request sent: %d\n", httpCode);
+        if (httpCode == 200 || httpCode == 201) {
+            Serial.println("Pairing request registered with backend");
+        }
+    } else {
+        Serial.printf("Pairing request failed: %s\n", http.errorToString(httpCode).c_str());
+    }
+    
+    http.end();
+}
+
+bool checkPairingStatus() {
+    if (WiFi.status() != WL_CONNECTED) return false;
+    
+    HTTPClient http;
+    String url = String(BACKEND_URL) + "/api/devices/" + deviceId + "/status";
+    
+    http.begin(url);
+    int httpCode = http.GET();
+    
+    bool paired = false;
+    
+    if (httpCode == 200) {
+        String response = http.getString();
+        // Check if device is paired
+        if (response.indexOf("\"paired\":true") != -1 || 
+            response.indexOf("\"status\":\"paired\"") != -1) {
+            paired = true;
+            // Only print if this is a new pairing
+            if (!prefs.getBool("paired", false)) {
+                Serial.println("Device successfully paired!");
+            }
+            prefs.putBool("paired", true);
+            prefs.putString("deviceId", deviceId);
+        } else if (response.indexOf("\"paired\":false") != -1) {
+            // Device is unpaired on backend
+            paired = false;
+            if (prefs.getBool("paired", false)) {
+                Serial.println("Device unpaired on backend");
+            }
+        }
+    }
+    
+    http.end();
+    return paired;
+}
+
 void connectWiFi() {
     String ssid = prefs.getString("ssid", "");
     String pass = prefs.getString("pass", "");
@@ -382,6 +485,32 @@ void setup()
     delay(3000);
 
     prefs.begin("wifi", false);
+    
+    // Initialize device ID (persistent)
+    deviceId = prefs.getString("deviceId", "");
+    if (deviceId.length() == 0) {
+        deviceId = generateDeviceId();
+        prefs.putString("deviceId", deviceId);
+        Serial.println("Generated new Device ID: " + deviceId);
+    } else {
+        Serial.println("Loaded existing Device ID: " + deviceId);
+    }
+    
+    // Debug: Print chip ID
+    uint64_t chipid = ESP.getEfuseMac();
+    Serial.printf("Chip ID: %04X%08X\n", (uint16_t)(chipid>>32), (uint32_t)chipid);
+    if (deviceId.length() == 0) {
+        deviceId = generateDeviceId();
+        prefs.putString("deviceId", deviceId);
+    }
+    
+    // Generate new pairing code each boot (if not paired)
+    if (!prefs.getBool("paired", false)) {
+        pairingCode = generatePairingCode();
+        Serial.println("Device ID: " + deviceId);
+        Serial.println("Pairing Code: " + pairingCode);
+    }
+    
     connectWiFi();
 }
 
@@ -396,6 +525,16 @@ void loop()
     }
 
     /* ================= WIFI STATE MACHINE ================= */
+    
+    // Check if WiFi disconnected during runtime
+    if (wifiConnected && WiFi.status() != WL_CONNECTED) {
+        Serial.println("WiFi disconnected! Attempting reconnect...");
+        wifiConnected = false;
+        wifiStartTime = millis();
+        lastWiFiRetry = millis();
+        connectWiFi();
+        return;
+    }
 
     if (!wifiConnected && WiFi.status() == WL_CONNECTED) {
         wifiConnected = true;
@@ -408,30 +547,115 @@ void loop()
         Serial.print("IP: ");
         Serial.println(WiFi.localIP());
 
+        bool devicePaired = prefs.getBool("paired", false);
+        
+        // Check actual pairing status with backend on boot
+        bool actuallyPaired = checkPairingStatus();
+        
+        // If we thought we were paired but backend says no, update local state
+        if (devicePaired && !actuallyPaired) {
+            Serial.println("Device was unpaired while offline. Updating local state.");
+            devicePaired = false;
+            prefs.putBool("paired", false);
+            // Generate new pairing code since we need to pair again
+            pairingCode = generatePairingCode();
+            Serial.println("New Pairing Code: " + pairingCode);
+        }
+        
         if (!devicePaired) {
             ui_Pairing_screen_init();
             lv_scr_load(ui_Pairing);
+            
+            // Display pairing code on screen
+            if (ui_Code) {
+                lv_label_set_text(ui_Code, pairingCode.c_str());
+            }
+            if (ui_Title) {
+                lv_label_set_text(ui_Title, deviceId.c_str());
+            }
+            
+            // Send pairing request to backend
+            sendPairingRequest();
+            lastPairingCheck = millis();
         } else {
             ui_Main_screen_init();
             lv_scr_load(ui_Main);
         }
     }
 
-    /* Auto SoftAP fallback */
-    if (!wifiConnected &&
-        !softAPStarted &&
-        millis() - wifiStartTime > WIFI_TIMEOUT) {
-
-        Serial.println("WiFi timeout → SoftAP");
-
-        prefs.remove("ssid");
-        prefs.remove("pass");
-
-        startSoftAP();
+    /* WiFi retry logic - try every 10 seconds */
+    if (!wifiConnected && !softAPStarted) {
+        if (millis() - lastWiFiRetry >= WIFI_RETRY_INTERVAL) {
+            lastWiFiRetry = millis();
+            
+            // Check if timeout exceeded
+            if (millis() - wifiStartTime > WIFI_TIMEOUT) {
+                Serial.println("WiFi timeout → SoftAP");
+                prefs.remove("ssid");
+                prefs.remove("pass");
+                startSoftAP();
+            } else {
+                // Retry connection
+                Serial.println("Retrying WiFi connection...");
+                String ssid = prefs.getString("ssid", "");
+                if (ssid.length() > 0 && WiFi.status() != WL_CONNECTED) {
+                    WiFi.disconnect();
+                    delay(100);
+                    WiFi.begin(ssid.c_str(), prefs.getString("pass", "").c_str());
+                }
+            }
+        }
     }
 
     /* Stop here if WiFi not ready */
     if (!wifiConnected) {
+        return;
+    }
+    
+    /* ================= PAIRING CHECK ================= */
+    bool devicePaired = prefs.getBool("paired", false);
+    unsigned long checkInterval = devicePaired ? PAIRED_CHECK_INTERVAL : PAIRING_CHECK_INTERVAL;
+    
+    if (millis() - lastPairingCheck >= checkInterval) {
+        lastPairingCheck = millis();
+        
+        bool currentlyPaired = checkPairingStatus();
+        
+        // Handle pairing state changes
+        if (!devicePaired && currentlyPaired) {
+            // Just got paired! Switch to main screen
+            Serial.println("Switching to Main screen");
+            ui_Main_screen_init();
+            lv_scr_load(ui_Main);
+            return;
+        } else if (devicePaired && !currentlyPaired) {
+            // Got unpaired from backend! Switch to pairing screen
+            Serial.println("Device was unpaired remotely. Switching to Pairing screen");
+            prefs.putBool("paired", false);
+            
+            // Generate new pairing code
+            pairingCode = generatePairingCode();
+            Serial.println("New Pairing Code: " + pairingCode);
+            
+            // Switch to pairing screen
+            ui_Pairing_screen_init();
+            lv_scr_load(ui_Pairing);
+            
+            if (ui_Code) {
+                lv_label_set_text(ui_Code, pairingCode.c_str());
+            }
+            if (ui_Title) {
+                lv_label_set_text(ui_Title, deviceId.c_str());
+            }
+            
+            // Send new pairing request
+            sendPairingRequest();
+            return;
+        }
+    }
+    
+    /* Skip sensor readings if not paired */
+    if (!devicePaired) {
         return;
     }
 

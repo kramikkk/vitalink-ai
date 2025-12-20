@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from database import Base
@@ -21,6 +21,7 @@ class User(Base):
     avatar_url = Column(String, nullable=True)
 
     metrics = relationship("Metrics", back_populates="user", cascade="all, delete-orphan")
+    devices = relationship("Device", back_populates="user", cascade="all, delete-orphan")
 
 
 class Metrics(Base):
@@ -41,4 +42,18 @@ class Metrics(Base):
     timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="metrics")
+
+
+class Device(Base):
+    __tablename__ = "devices"
+
+    id = Column(Integer, primary_key=True, index=True)
+    device_id = Column(String, unique=True, index=True, nullable=False)  # e.g., "VL-ABC123"
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Null until paired
+    paired = Column(Boolean, default=False, nullable=False)
+    pairing_code = Column(String, nullable=True)  # 6-digit code, cleared after pairing
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    paired_at = Column(DateTime, nullable=True)
+
+    user = relationship("User", back_populates="devices")
 

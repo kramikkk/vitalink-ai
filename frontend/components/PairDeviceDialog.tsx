@@ -12,8 +12,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Wifi, CheckCircle2, XCircle, Radio } from "lucide-react";
+import { Loader2, Wifi, CheckCircle2, XCircle, Radio, Link2Off } from "lucide-react";
 import { tokenManager } from "@/lib/api";
+import { useUser } from "@/contexts/UserContext";
 
 interface PairDeviceDialogProps {
   open: boolean;
@@ -21,12 +22,14 @@ interface PairDeviceDialogProps {
 }
 
 export function PairDeviceDialog({ open, onOpenChange }: PairDeviceDialogProps) {
-  const [step, setStep] = useState<"detect" | "configure" | "pairing" | "success">("detect");
+  const { user } = useUser();
+  const [step, setStep] = useState<"detect" | "configure" | "pairing" | "success" | "paired">("detect");
   const [pairingCode, setPairingCode] = useState("");
   const [backendUrl, setBackendUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [pairedDevice, setPairedDevice] = useState<{ device_id: string; paired_at: string } | null>(null);
 
   // Detect backend URL automatically
   useEffect(() => {
@@ -35,6 +38,7 @@ export function PairDeviceDialog({ open, onOpenChange }: PairDeviceDialogProps) 
       const hostname = window.location.hostname;
       const detectedBackend = `${protocol}//${hostname}:8000`;
       setBackendUrl(detectedBackend);
+      checkExistingDevice(detectedBackend);
     }
   }, [open]);
 
@@ -43,12 +47,37 @@ export function PairDeviceDialog({ open, onOpenChange }: PairDeviceDialogProps) 
     if (!open) {
       setTimeout(() => {
         setStep("detect");
+        setPairingCode("");
         setError("");
         setSuccess("");
         setLoading(false);
+        setPairedDevice(null);
       }, 300);
     }
   }, [open]);
+
+  const checkExistingDevice = async (url: string) => {
+    try {
+      const token = tokenManager.getToken();
+      if (!token) return;
+
+      const response = await fetch(`${url}/api/devices/my-device`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.device_id) {
+          setPairedDevice(data);
+          setStep("paired");
+        }
+      }
+    } catch (err) {
+      console.error("Failed to check existing device:", err);
+    }
+  };
 
   const handleDetectDevice = () => {
     setStep("configure");
@@ -60,8 +89,8 @@ export function PairDeviceDialog({ open, onOpenChange }: PairDeviceDialogProps) 
     setSuccess("");
 
     try {
-      if (!pairingCode || pairingCode.length < 4) {
-        throw new Error("Please enter a valid pairing code");
+      if (!pairingCode || pairingCode.length !== 6) {
+        throw new Error("Please enter a valid 6-digit pairing code");
       }
 
       const token = tokenManager.getToken();
@@ -70,7 +99,7 @@ export function PairDeviceDialog({ open, onOpenChange }: PairDeviceDialogProps) 
       }
 
       // Send pairing code to backend
-      const response = await fetch(`${backendUrl}/devices/pair-with-code`, {
+      const response = await fetch(`${backendUrl}/api/devices/pair-with-code`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -91,6 +120,40 @@ export function PairDeviceDialog({ open, onOpenChange }: PairDeviceDialogProps) 
 
     } catch (err: any) {
       setError(err.message || "Failed to pair device");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUnpair = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const token = tokenManager.getToken();
+      if (!token) {
+        throw new Error("You must be logged in");
+      }
+
+      const response = await fetch(`${backendUrl}/api/devices/unpair`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.detail || "Failed to unpair device");
+      }
+
+      setPairedDevice(null);
+      setStep("detect");
+      setSuccess("Device unpaired successfully");
+
+    } catch (err: any) {
+      setError(err.message || "Failed to unpair device");
       console.error(err);
     } finally {
       setLoading(false);
@@ -119,6 +182,48 @@ export function PairDeviceDialog({ open, onOpenChange }: PairDeviceDialogProps) 
         </DialogHeader>
 
         <div className="space-y-6 py-2">
+          {/* Already Paired */}
+          {step === "paired" && pairedDevice && (
+            <div className="space-y-6">
+              <Alert className="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950">
+                <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                <AlertDescription>
+                  <div className="space-y-2 text-sm text-green-800 dark:text-green-200">
+                    <p className="font-semibold">Device Currently Paired</p>
+                    <p>Device ID: <span className="font-mono font-bold">{pairedDevice.device_id}</span></p>
+                    <p className="text-xs">Paired on {new Date(pairedDevice.paired_at).toLocaleDateString()}</p>
+                  </div>
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Your account is currently linked to this VitalinkAI device. To pair a different device, you must first unpair this one.
+                </p>
+                
+                <Button
+                  onClick={handleUnpair}
+                  disabled={loading}
+                  variant="destructive"
+                  className="w-full h-11"
+                  size="lg"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Unpairing...
+                    </>
+                  ) : (
+                    <>
+                      <Link2Off className="mr-2 h-5 w-5" />
+                      Unpair Device
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Step 1: Detect Device */}
           {step === "detect" && (
             <div className="space-y-6">
@@ -168,7 +273,7 @@ export function PairDeviceDialog({ open, onOpenChange }: PairDeviceDialogProps) 
 
               <Button
                 onClick={handlePairWithCode}
-                disabled={loading || pairingCode.length < 4}
+                disabled={loading || pairingCode.length !== 6}
                 className="w-full h-11"
                 size="lg"
               >

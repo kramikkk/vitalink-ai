@@ -2,11 +2,56 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func, text
 from database import get_db, engine
-from models_db import User, Metrics
+from models_db import User, Metrics, Device
 from utils.auth_utils import get_current_user
 from datetime import datetime, timedelta, timezone
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/metrics", tags=["Metrics"])
+
+# Pydantic model for sensor data from ESP32
+class SensorDataRequest(BaseModel):
+    device_id: str
+    heart_rate: float
+    motion_intensity: float
+
+@router.post("/sensor-data")
+def receive_sensor_data(data: SensorDataRequest, db: Session = Depends(get_db)):
+    """
+    ESP32 sends sensor data (BPM and motion intensity) to this endpoint.
+    The device must be paired to a user.
+    """
+    # Find the device and verify it's paired
+    device = db.query(Device).filter(Device.device_id == data.device_id).first()
+    
+    if not device:
+        raise HTTPException(status_code=404, detail="Device not found")
+    
+    if not device.paired or device.user_id is None:
+        raise HTTPException(status_code=403, detail="Device not paired to any user")
+    
+    # Create new metrics entry
+    new_metric = Metrics(
+        user_id=device.user_id,
+        heart_rate=data.heart_rate,
+        motion_intensity=data.motion_intensity,
+        prediction="normal",  # Default - will be updated by ML model later
+        anomaly_score=0.0,     # Default - will be updated by ML model later
+        confidence_normal=1.0, # Default - will be updated by ML model later
+        confidence_anomaly=0.0, # Default - will be updated by ML model later
+        timestamp=datetime.now(timezone.utc)
+    )
+    
+    db.add(new_metric)
+    db.commit()
+    db.refresh(new_metric)
+    
+    return {
+        "message": "Sensor data received",
+        "metric_id": new_metric.id,
+        "user_id": device.user_id
+    }
+
 @router.get("/latest")
 def get_latest_metrics(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     # Use the Metrics table with user_id filter instead of per-user tables
@@ -16,7 +61,8 @@ def get_latest_metrics(current_user: User = Depends(get_current_user), db: Sessi
         ).order_by(Metrics.id.desc()).limit(3).all()
 
         if not results:
-            raise HTTPException(status_code=404, detail="No data available")
+            # Return empty array instead of 404 when no data
+            return []
 
         return [{
             "id": m.id,
@@ -30,6 +76,9 @@ def get_latest_metrics(current_user: User = Depends(get_current_user), db: Sessi
         } for m in results]
 
     except Exception as e:
+        print(f"Error in get_latest_metrics: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/summary")
@@ -80,4 +129,47 @@ def get_heart_rate_summary(
         })
     
     return summary_list
+
+@router.get("/history")
+def get_metrics_history(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    start_time: str = Query(None, description="Start time in ISO format"),
+    end_time: str = Query(None, description="End time in ISO format"),
+    limit: int = Query(1000, description="Maximum number of records to return")
+):
+    """
+    Get metrics history for the current user within a time range.
+    Used by the frontend chart to display live and historical data.
+    """
+    query = db.query(Metrics).filter(Metrics.user_id == current_user.id)
+    
+    # Apply time range filters if provided
+    if start_time:
+        try:
+            start_dt = datetime.fromisoformat(start_time.replace('Z', '+00:00'))
+            query = query.filter(Metrics.timestamp >= start_dt)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid start_time format. Use ISO format.")
+    
+    if end_time:
+        try:
+            end_dt = datetime.fromisoformat(end_time.replace('Z', '+00:00'))
+            query = query.filter(Metrics.timestamp <= end_dt)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid end_time format. Use ISO format.")
+    
+    # Order by timestamp and apply limit
+    results = query.order_by(Metrics.timestamp.asc()).limit(limit).all()
+    
+    return [{
+        "id": m.id,
+        "heart_rate": m.heart_rate,
+        "motion_intensity": m.motion_intensity,
+        "prediction": m.prediction,
+        "anomaly_score": m.anomaly_score,
+        "confidence_normal": m.confidence_normal,
+        "confidence_anomaly": m.confidence_anomaly,
+        "timestamp": m.timestamp.isoformat()
+    } for m in results]
 

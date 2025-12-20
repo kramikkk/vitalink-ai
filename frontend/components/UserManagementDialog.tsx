@@ -428,7 +428,7 @@ export function UserManagementDialog({ open, onOpenChange }: UserManagementDialo
                 id="full_name"
                 value={newAdminForm.full_name}
                 onChange={(e) => setNewAdminForm({ ...newAdminForm, full_name: e.target.value })}
-                placeholder="John Doe"
+                placeholder="Full Name"
               />
             </div>
             <div className="grid gap-2">
@@ -437,7 +437,7 @@ export function UserManagementDialog({ open, onOpenChange }: UserManagementDialo
                 id="username"
                 value={newAdminForm.username}
                 onChange={(e) => setNewAdminForm({ ...newAdminForm, username: e.target.value })}
-                placeholder="johndoe"
+                placeholder="Username"
               />
             </div>
             <div className="grid gap-2">
@@ -446,7 +446,7 @@ export function UserManagementDialog({ open, onOpenChange }: UserManagementDialo
                 id="admin_id"
                 value={newAdminForm.admin_id}
                 onChange={(e) => setNewAdminForm({ ...newAdminForm, admin_id: e.target.value })}
-                placeholder="ADM001"
+                placeholder="Admin ID"
               />
             </div>
             <div className="grid gap-2">
@@ -456,7 +456,7 @@ export function UserManagementDialog({ open, onOpenChange }: UserManagementDialo
                 type="email"
                 value={newAdminForm.email}
                 onChange={(e) => setNewAdminForm({ ...newAdminForm, email: e.target.value })}
-                placeholder="john@example.com"
+                placeholder="admin@example.com"
               />
             </div>
             <div className="grid gap-2">

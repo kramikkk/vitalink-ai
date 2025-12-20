@@ -28,6 +28,8 @@ extern "C" {
 ///////////////////// SCREENS ////////////////////
 #include "ui_Main.h"
 #include "ui_Splash.h"
+#include "ui_Pairing.h"
+#include "ui_WiFi.h"
 
 ///////////////////// VARIABLES ////////////////////
 
@@ -35,7 +37,7 @@ extern "C" {
 extern lv_obj_t *ui____initial_actions0;
 
 // IMAGES AND IMAGE SETS
-LV_IMG_DECLARE( ui_img_vitalink_logo_center_png);   // assets/VitaLink Logo Center.png
+LV_IMG_DECLARE( ui_img_vitalink_ai_logo_center_compressed_png);   // assets/VITALINK AI Logo Center Compressed.png
 
 // UI INIT
 void ui_init(void);

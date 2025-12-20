@@ -34,6 +34,8 @@ lv_theme_t *theme = lv_theme_default_init(dispp, lv_palette_main(LV_PALETTE_BLUE
 lv_disp_set_theme(dispp, theme);
 ui_Main_screen_init();
 ui_Splash_screen_init();
+ui_Pairing_screen_init();
+ui_WiFi_screen_init();
 ui____initial_actions0 = lv_obj_create(NULL);
 lv_disp_load_scr( ui_Main);
 }
@@ -41,4 +43,6 @@ lv_disp_load_scr( ui_Main);
 void ui_destroy( void )
 {ui_Main_screen_destroy();
 ui_Splash_screen_destroy();
+ui_Pairing_screen_destroy();
+ui_WiFi_screen_destroy();
 }

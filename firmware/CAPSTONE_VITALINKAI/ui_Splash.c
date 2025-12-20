@@ -5,7 +5,7 @@
 
 #include "ui.h"
 
-lv_obj_t *ui_Splash = NULL;lv_obj_t *ui_Image3 = NULL;
+lv_obj_t *ui_Splash = NULL;lv_obj_t *ui_Image8 = NULL;
 // event funtions
 
 // build funtions
@@ -15,13 +15,13 @@ void ui_Splash_screen_init(void)
 ui_Splash = lv_obj_create(NULL);
 lv_obj_clear_flag( ui_Splash, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
 
-ui_Image3 = lv_img_create(ui_Splash);
-lv_img_set_src(ui_Image3, &ui_img_vitalink_logo_center_png);
-lv_obj_set_width( ui_Image3, LV_SIZE_CONTENT);  /// 240
-lv_obj_set_height( ui_Image3, LV_SIZE_CONTENT);   /// 240
-lv_obj_set_align( ui_Image3, LV_ALIGN_CENTER );
-lv_obj_add_flag( ui_Image3, LV_OBJ_FLAG_ADV_HITTEST );   /// Flags
-lv_obj_clear_flag( ui_Image3, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
+ui_Image8 = lv_img_create(ui_Splash);
+lv_img_set_src(ui_Image8, &ui_img_vitalink_ai_logo_center_compressed_png);
+lv_obj_set_width( ui_Image8, LV_SIZE_CONTENT);  /// 240
+lv_obj_set_height( ui_Image8, LV_SIZE_CONTENT);   /// 240
+lv_obj_set_align( ui_Image8, LV_ALIGN_CENTER );
+lv_obj_add_flag( ui_Image8, LV_OBJ_FLAG_ADV_HITTEST );   /// Flags
+lv_obj_clear_flag( ui_Image8, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
 
 }
 
@@ -31,6 +31,6 @@ void ui_Splash_screen_destroy(void)
 
 // NULL screen variables
 ui_Splash= NULL;
-ui_Image3= NULL;
+ui_Image8= NULL;
 
 }

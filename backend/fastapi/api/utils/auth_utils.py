@@ -87,3 +87,17 @@ def require_role(allowed_roles: List[UserRole]):
         return current_user
     return role_checker
 
+
+def require_admin(current_user: User = Depends(get_current_user)):
+    """
+    Dependency to require admin or super_admin role.
+    Shortcut for require_role([UserRole.ADMIN, UserRole.SUPER_ADMIN])
+    """
+    user_role_str = current_user.role if isinstance(current_user.role, str) else current_user.role.value
+    
+    if user_role_str not in [UserRole.ADMIN.value, UserRole.SUPER_ADMIN.value]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Admin or Super Admin role required."
+        )
+    return current_user

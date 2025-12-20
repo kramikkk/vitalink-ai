@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
-from routers import metrics, auth
+from routers import metrics, auth, devices
 from database import Base, engine
 import os
 from dotenv import load_dotenv
@@ -51,6 +51,7 @@ def custom_openapi():
 app.openapi = custom_openapi
 app.include_router(metrics.router) 
 app.include_router(auth.router, prefix="/auth")
+app.include_router(devices.router)
 
 
 

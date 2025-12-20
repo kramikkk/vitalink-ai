@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { LogOut, CircleUser, Bell, Settings, Users, Radio } from "lucide-react"
+import { LogOut, CircleUser, Bell, Settings, Users, Radio, Smartphone } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -20,6 +20,7 @@ import { tokenManager, UserRole } from "@/lib/api"
 import { useUser } from "@/contexts/UserContext"
 import { UserManagementDialog } from "./UserManagementDialog"
 import { PairDeviceDialog } from "./PairDeviceDialog"
+import { DeviceManagementDialog } from "./DeviceManagementDialog"
 
 const NavBar = () => {
   const { user, isLoading } = useUser()
@@ -27,6 +28,7 @@ const NavBar = () => {
   const [avatarUrl, setAvatarUrl] = useState('')
   const [userManagementOpen, setUserManagementOpen] = useState(false)
   const [pairDeviceOpen, setPairDeviceOpen] = useState(false)
+  const [deviceManagementOpen, setDeviceManagementOpen] = useState(false)
 
   useEffect(() => {
     if (user?.avatar_url) {
@@ -138,10 +140,16 @@ const NavBar = () => {
                 </DropdownMenuItem>
               )}
               {isAdminOrSuperAdmin && (
-                <DropdownMenuItem onClick={() => setUserManagementOpen(true)}>
-                  <Users />
-                  User Management
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem onClick={() => setUserManagementOpen(true)}>
+                    <Users />
+                    User Management
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setDeviceManagementOpen(true)}>
+                    <Smartphone />
+                    Device Management
+                  </DropdownMenuItem>
+                </>
               )}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
@@ -163,6 +171,12 @@ const NavBar = () => {
       <PairDeviceDialog
         open={pairDeviceOpen}
         onOpenChange={setPairDeviceOpen}
+      />
+
+      {/* Device Management Dialog */}
+      <DeviceManagementDialog
+        open={deviceManagementOpen}
+        onOpenChange={setDeviceManagementOpen}
       />
     </nav> 
   )

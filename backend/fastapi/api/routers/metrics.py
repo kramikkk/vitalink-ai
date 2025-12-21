@@ -7,8 +7,10 @@ from utils.auth_utils import get_current_user
 from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel
 from ai_model.model import predict
+from routers.alerts import generate_alert_if_needed
 
 router = APIRouter(prefix="/metrics", tags=["Metrics"])
+
 
 # Pydantic model for sensor data from ESP32
 class SensorDataRequest(BaseModel):
@@ -50,6 +52,17 @@ def receive_sensor_data(data: SensorDataRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_metric)
 
+    # Generate AI-driven alerts if abnormal readings detected
+    generate_alert_if_needed(
+        db=db,
+        user_id=device.user_id,
+        heart_rate=data.heart_rate,
+        motion_intensity=data.motion_intensity,
+        prediction=prediction_result["prediction"],
+        anomaly_score=prediction_result["anomaly_score"],
+        confidence_anomaly=prediction_result["confidence_anomaly"]
+    )
+
     return {
         "message": "Sensor data received",
         "metric_id": new_metric.id,
@@ -79,7 +92,7 @@ def get_latest_metrics(current_user: User = Depends(get_current_user), db: Sessi
             "anomaly_score": m.anomaly_score,
             "confidence_normal": m.confidence_normal,
             "confidence_anomaly": m.confidence_anomaly,
-            "timestamp": m.timestamp
+            "timestamp": m.timestamp.isoformat() if m.timestamp else None
         } for m in results]
 
     except Exception as e:
@@ -219,7 +232,7 @@ def get_student_latest_metrics(
         "anomaly_score": m.anomaly_score,
         "confidence_normal": m.confidence_normal,
         "confidence_anomaly": m.confidence_anomaly,
-        "timestamp": m.timestamp
+        "timestamp": m.timestamp.isoformat() if m.timestamp else None
     } for m in results]
 
 
@@ -278,4 +291,3 @@ def get_student_metrics_history(
         "confidence_anomaly": m.confidence_anomaly,
         "timestamp": m.timestamp.isoformat()
     } for m in results]
-

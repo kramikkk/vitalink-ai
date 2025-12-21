@@ -1,7 +1,26 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
+from sqlalchemy.types import TypeDecorator
 from datetime import datetime, timezone
 from database import Base
+
+
+# Custom DateTime type that ensures timezone awareness
+class TZDateTime(TypeDecorator):
+    impl = DateTime
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            if not value.tzinfo:
+                raise ValueError("datetime must be timezone-aware")
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None and not value.tzinfo:
+            # Assume UTC if no timezone info
+            return value.replace(tzinfo=timezone.utc)
+        return value
 
 metadata = Base.metadata
 
@@ -22,6 +41,7 @@ class User(Base):
 
     metrics = relationship("Metrics", back_populates="user", cascade="all, delete-orphan")
     devices = relationship("Device", back_populates="user", cascade="all, delete-orphan")
+    alerts = relationship("Alert", back_populates="user", cascade="all, delete-orphan")
 
 
 class Metrics(Base):
@@ -34,12 +54,12 @@ class Metrics(Base):
 
     heart_rate = Column(Float, nullable=False)
     motion_intensity = Column(Float, nullable=False)
-    prediction = Column(String, nullable=False)         
+    prediction = Column(String, nullable=False)
     anomaly_score = Column(Float, nullable=False)
     confidence_normal = Column(Float, nullable=False)
     confidence_anomaly = Column(Float, nullable=False)
 
-    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    timestamp = Column(TZDateTime, default=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="metrics")
 
@@ -56,4 +76,32 @@ class Device(Base):
     paired_at = Column(DateTime, nullable=True)
 
     user = relationship("User", back_populates="devices")
+
+
+class Alert(Base):
+    __tablename__ = "alerts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+
+    # Alert details
+    alert_type = Column(String, nullable=False)  # "ANOMALY", "HIGH_HEART_RATE", "HIGH_STRESS", etc.
+    severity = Column(String, nullable=False)  # "LOW", "MEDIUM", "HIGH", "CRITICAL"
+    title = Column(String, nullable=False)
+    message = Column(String, nullable=False)
+
+    # Metrics that triggered the alert
+    heart_rate = Column(Float, nullable=True)
+    motion_intensity = Column(Float, nullable=True)
+    stress_level = Column(Float, nullable=True)
+    anomaly_score = Column(Float, nullable=True)
+
+    # Status tracking
+    is_read = Column(Boolean, default=False, nullable=False)
+
+    # Timestamps
+    created_at = Column(TZDateTime, default=lambda: datetime.now(timezone.utc))
+    read_at = Column(TZDateTime, nullable=True)
+
+    user = relationship("User", back_populates="alerts")
 

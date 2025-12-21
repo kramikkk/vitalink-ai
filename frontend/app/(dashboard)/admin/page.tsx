@@ -303,7 +303,7 @@ const AdminPage = () => {
 				{/* RIGHT */}
 				<div className="w-full lg:w-1/3 min-w-[300px] flex flex-col gap-4 lg:overflow-y-auto">
 					<div className="flex-[0.6] min-h-0">
-						<AlertCards student={transformedStudent} />
+						<AlertCards student={transformedStudent} studentId={selectedStudent ? parseInt(selectedStudent) : undefined} />
 					</div>
 					<div className="flex-[0.4] min-h-0">
 						<UserProfileCard studentProfile={currentStudent} />

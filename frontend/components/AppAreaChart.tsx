@@ -355,7 +355,7 @@ export function AppAreaChart({
     // Format timestamp based on time range
     const formatTimestamp = () => {
       const date = new Date(label)
-      
+
       switch(timeRange) {
         case "live":
           // Show full time with seconds for live data
@@ -364,7 +364,8 @@ export function AppAreaChart({
             day: "numeric",
             hour: "2-digit",
             minute: "2-digit",
-            second: "2-digit"
+            second: "2-digit",
+            timeZone: "Asia/Manila"
           })
         case "1h":
           // Show date and time with minutes for 1 hour range
@@ -372,7 +373,8 @@ export function AppAreaChart({
             month: "short",
             day: "numeric",
             hour: "2-digit",
-            minute: "2-digit"
+            minute: "2-digit",
+            timeZone: "Asia/Manila"
           })
         case "24h":
           // Show date and hour for 24 hour range
@@ -380,7 +382,8 @@ export function AppAreaChart({
             month: "short",
             day: "numeric",
             hour: "2-digit",
-            minute: "2-digit"
+            minute: "2-digit",
+            timeZone: "Asia/Manila"
           })
         case "7d":
         case "30d":
@@ -388,19 +391,22 @@ export function AppAreaChart({
           return date.toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
-            year: "numeric"
+            year: "numeric",
+            timeZone: "Asia/Manila"
           })
         case "12mo":
           // Show month and year for monthly aggregation
           return date.toLocaleDateString("en-US", {
             month: "long",
-            year: "numeric"
+            year: "numeric",
+            timeZone: "Asia/Manila"
           })
         default:
           return date.toLocaleDateString("en-US", {
             month: "short",
             day: "numeric",
-            year: "numeric"
+            year: "numeric",
+            timeZone: "Asia/Manila"
           })
       }
     }
@@ -491,33 +497,39 @@ export function AppAreaChart({
                     return date.toLocaleTimeString("en-US", {
                       hour: "2-digit",
                       minute: "2-digit",
-                      second: "2-digit"
+                      second: "2-digit",
+                      timeZone: "Asia/Manila"
                     })
                   case "1h":
                     return date.toLocaleTimeString("en-US", {
                       hour: "2-digit",
-                      minute: "2-digit"
+                      minute: "2-digit",
+                      timeZone: "Asia/Manila"
                     })
                   case "24h":
                     return date.toLocaleTimeString("en-US", {
                       hour: "2-digit",
-                      minute: "2-digit"
+                      minute: "2-digit",
+                      timeZone: "Asia/Manila"
                     })
                   case "7d":
                   case "30d":
                     return date.toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
+                      timeZone: "Asia/Manila"
                     })
                   case "12mo":
                     return date.toLocaleDateString("en-US", {
                       month: "short",
                       year: "2-digit",
+                      timeZone: "Asia/Manila"
                     })
                   default:
                     return date.toLocaleDateString("en-US", {
                       month: "short",
                       day: "numeric",
+                      timeZone: "Asia/Manila"
                     })
                 }
               }}

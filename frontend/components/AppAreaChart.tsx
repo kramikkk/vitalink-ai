@@ -55,13 +55,15 @@ interface AppAreaChartProps {
   selectedMetric?: "All" | "HeartRate" | "ActivityLevel" | "StressLevel"
   timeRange?: string
   student?: Student
+  studentId?: number  // For admin mode - if provided, fetch data for this student
 }
 
 export function AppAreaChart({ 
   selectedMetric = "All", 
   timeRange = "live",
-  student
-}: AppAreaChartProps = {}) {
+  student,
+  studentId  // Admin mode: fetch data for specific student
+}: AppAreaChartProps) {
   const [chartData, setChartData] = React.useState<Array<{date: string, HeartRate: number, ActivityLevel: number, StressLevel: number}>>([])
   const [loading, setLoading] = React.useState(true)
 
@@ -103,12 +105,21 @@ export function AppAreaChart({
             startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
         }
 
-        const metrics = await metricsApi.getMetricsHistory(
-          token,
-          startTime.toISOString(),
-          now.toISOString(),
-          10000 // Fetch up to 10000 records
-        )
+        // Fetch metrics - use student-specific endpoint if studentId is provided (admin mode)
+        const metrics = studentId 
+          ? await metricsApi.getStudentMetricsHistory(
+              token,
+              studentId,
+              startTime.toISOString(),
+              now.toISOString(),
+              10000
+            )
+          : await metricsApi.getMetricsHistory(
+              token,
+              startTime.toISOString(),
+              now.toISOString(),
+              10000
+            )
 
         // Transform backend data to chart format
         const transformedData = metrics.map(m => ({
@@ -134,7 +145,7 @@ export function AppAreaChart({
       const interval = setInterval(fetchData, 1000) // Refresh every second for live data
       return () => clearInterval(interval)
     }
-  }, [timeRange])
+  }, [timeRange, studentId])
 
   // Aggregate data based on time range
   // Process raw per-second data from database according to filter requirements

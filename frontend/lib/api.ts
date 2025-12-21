@@ -277,4 +277,55 @@ export const metricsApi = {
 
     return response.json();
   },
+  
+  // Get latest metrics for a specific student (admin only)
+  async getStudentLatestMetrics(token: string, studentId: number): Promise<MetricData[]> {
+    const response = await fetch(`${API_BASE_URL}/metrics/student/${studentId}/latest`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return []; // No data available yet
+      }
+      throw new Error('Failed to fetch student metrics');
+    }
+
+    return response.json();
+  },
+
+  // Get metrics history for a specific student (admin only)
+  async getStudentMetricsHistory(
+    token: string,
+    studentId: number,
+    startTime?: string,
+    endTime?: string,
+    limit?: number
+  ): Promise<MetricData[]> {
+    const params = new URLSearchParams();
+    if (startTime) params.append('start_time', startTime);
+    if (endTime) params.append('end_time', endTime);
+    if (limit) params.append('limit', limit.toString());
+
+    const response = await fetch(`${API_BASE_URL}/metrics/student/${studentId}/history?${params}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return []; // No data available yet
+      }
+      throw new Error('Failed to fetch student metrics history');
+    }
+
+    return response.json();
+  },
 };

@@ -24,7 +24,7 @@ unsigned long wifiStartTime = 0;
 unsigned long lastWiFiRetry = 0;
 
 #define WIFI_TIMEOUT 60000   // 1 minute
-#define WIFI_RETRY_INTERVAL 10000  // Retry every 10 seconds
+#define WIFI_RETRY_INTERVAL 1000  // Retry every 1 seconds
 
 /* ===================== PAIRING ===================== */
 String pairingCode = "";

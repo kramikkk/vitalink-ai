@@ -24,7 +24,7 @@ unsigned long wifiStartTime = 0;
 unsigned long lastWiFiRetry = 0;
 
 #define WIFI_TIMEOUT 60000   // 1 minute
-#define WIFI_RETRY_INTERVAL 1000  // Retry every 1 seconds
+#define WIFI_RETRY_INTERVAL 5000  // Retry every 5 seconds
 
 /* ===================== PAIRING ===================== */
 String pairingCode = "";
@@ -37,7 +37,7 @@ const unsigned long PAIRED_CHECK_INTERVAL = 1000;   // Check every 1 second when
 unsigned long lastDataSend = 0;
 const unsigned long DATA_SEND_INTERVAL = 1000;  // Send data every 1 second
 
-const char* BACKEND_URL = "http://172.20.10.3:8000";
+const char* BACKEND_URL = "http://192.168.1.6:8000";
 
 /*--------------------------------- GC9A01 DISPLAY ---------------------------------*/
 static const uint16_t screenWidth  = 240;
@@ -256,11 +256,98 @@ void handleWiFiPortal() {
 
         client.println("HTTP/1.1 200 OK");
         client.println("Content-Type: text/html");
+        client.println("Connection: close");
         client.println();
-        client.println("<h2>Saved. Rebooting...</h2>");
+
+        client.println(R"rawliteral(
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>WiFi Saved</title>
+
+        <style>
+            html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            }
+
+            body {
+            background: #0f1115;
+            color: #e5e7eb;
+            font-family: Arial, sans-serif;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            }
+
+            .card {
+            background: #1c1f26;
+            border-radius: 16px;
+            padding: 32px;
+            width: 90%;
+            max-width: 360px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            }
+
+            h2 {
+            margin-top: 0;
+            color: #22c55e;
+            }
+
+            .count {
+            font-size: 36px;
+            font-weight: bold;
+            margin: 16px 0;
+            }
+
+            .hint {
+            font-size: 14px;
+            opacity: 0.7;
+            margin-top: 12px;
+            }
+        </style>
+        </head>
+
+        <body>
+        <div class="card">
+            <h2>WiFi Saved</h2>
+            <p>Device is rebooting</p>
+            <p>Closing in</p>
+            <div class="count" id="count">5</div>
+            <p>seconds</p>
+
+            <div class="hint" id="hint"></div>
+        </div>
+
+        <script>
+            let seconds = 5;
+            const countEl = document.getElementById("count");
+            const hintEl = document.getElementById("hint");
+
+            const timer = setInterval(() => {
+            seconds--;
+            countEl.textContent = seconds;
+
+            if (seconds <= 0) {
+                clearInterval(timer);
+
+                window.close();
+
+                hintEl.innerHTML = "You may now close this page.";
+            }
+            }, 1000);
+        </script>
+        </body>
+        </html>
+        )rawliteral");
 
         delay(1500);
         ESP.restart();
+
     }
 
     // 📄 Serve HTML page
@@ -479,6 +566,13 @@ unsigned long fingerStartTime = 0;
 const unsigned long FINGER_SETTLE_TIME = 10000;
 bool settlingDone = false;
 
+unsigned long unpairDetectedAt = 0;
+
+int clampInt(int value, int minVal, int maxVal) {
+if (value < minVal) return minVal;
+if (value > maxVal) return maxVal;
+return value;
+}
 
 /*--------------------------------- SETUP ---------------------------------*/
 void setup()
@@ -556,6 +650,18 @@ void loop()
     lv_timer_handler();
     delay(5);
 
+    if (Serial.available()) {
+    String cmd = Serial.readStringUntil('\n');
+    cmd.trim();
+
+    if (cmd == "RESET_WIFI") {
+        Serial.println("🔁 Clearing WiFi credentials");
+        prefs.remove("ssid");
+        prefs.remove("pass");
+        ESP.restart();
+    }
+}
+
     if (softAPStarted) {
     handleWiFiPortal();
     }
@@ -623,72 +729,105 @@ void loop()
     if (!wifiConnected && !softAPStarted) {
         if (millis() - lastWiFiRetry >= WIFI_RETRY_INTERVAL) {
             lastWiFiRetry = millis();
-            
-            // Check if timeout exceeded
+
+            wl_status_t status = WiFi.status();
+
+            if (status == WL_CONNECTED) {
+                return;
+            }
+
+            // 🚫 DO NOT TOUCH WIFI IF ALREADY CONNECTING
+            if (status == WL_IDLE_STATUS) {
+                Serial.println("WiFi idle, starting connection...");
+                WiFi.begin(
+                    prefs.getString("ssid", "").c_str(),
+                    prefs.getString("pass", "").c_str()
+                );
+            }
+            else if (status == WL_DISCONNECTED) {
+                Serial.println("WiFi disconnected, retrying...");
+                WiFi.begin(
+                    prefs.getString("ssid", "").c_str(),
+                    prefs.getString("pass", "").c_str()
+                );
+            }
+            else {
+                // WL_CONNECTING or others
+                Serial.println("WiFi connecting... waiting");
+            }
+
+            // Timeout fallback
             if (millis() - wifiStartTime > WIFI_TIMEOUT) {
                 Serial.println("WiFi timeout → SoftAP");
                 prefs.remove("ssid");
                 prefs.remove("pass");
                 startSoftAP();
-            } else {
-                // Retry connection
-                Serial.println("Retrying WiFi connection...");
-                String ssid = prefs.getString("ssid", "");
-                if (ssid.length() > 0 && WiFi.status() != WL_CONNECTED) {
-                    WiFi.disconnect();
-                    delay(100);
-                    WiFi.begin(ssid.c_str(), prefs.getString("pass", "").c_str());
-                }
             }
         }
     }
+
 
     /* Stop here if WiFi not ready */
     if (!wifiConnected) {
         return;
     }
     
-    /* ================= PAIRING CHECK ================= */
-    bool devicePaired = prefs.getBool("paired", false);
-    unsigned long checkInterval = devicePaired ? PAIRED_CHECK_INTERVAL : PAIRING_CHECK_INTERVAL;
-    
-    if (millis() - lastPairingCheck >= checkInterval) {
-        lastPairingCheck = millis();
-        
-        bool currentlyPaired = checkPairingStatus();
-        
-        // Handle pairing state changes
-        if (!devicePaired && currentlyPaired) {
-            // Just got paired! Switch to main screen
-            Serial.println("Switching to Main screen");
-            ui_Main_screen_init();
-            lv_scr_load(ui_Main);
-            return;
-        } else if (devicePaired && !currentlyPaired) {
-            // Got unpaired from backend! Switch to pairing screen
-            Serial.println("Device was unpaired remotely. Switching to Pairing screen");
+/* ================= PAIRING CHECK ================= */
+bool devicePaired = prefs.getBool("paired", false);
+unsigned long checkInterval = devicePaired ? PAIRED_CHECK_INTERVAL : PAIRING_CHECK_INTERVAL;
+
+if (millis() - lastPairingCheck >= checkInterval) {
+    lastPairingCheck = millis();
+
+    bool currentlyPaired = checkPairingStatus();
+
+    if (!devicePaired && currentlyPaired) {
+        Serial.println("Switching to Main screen");
+
+        ui_Main_screen_init();
+        lv_scr_load(ui_Main);
+
+        unpairDetectedAt = 0;  // reset safety timer
+        return;
+    }
+
+    if (devicePaired && !currentlyPaired) {
+
+        if (unpairDetectedAt == 0) {
+            unpairDetectedAt = millis();
+            Serial.println("Unpair detected, waiting to confirm...");
+        }
+
+        // Confirm if actually unpaired after 1 second to avoid backend wrong flag
+        if (millis() - unpairDetectedAt >= 1000) {
+            Serial.println("Confirmed remote unpair. Switching to Pairing screen.");
+
             prefs.putBool("paired", false);
-            
-            // Generate new pairing code
+
             pairingCode = generatePairingCode();
             Serial.println("New Pairing Code: " + pairingCode);
-            
-            // Switch to pairing screen
+
             ui_Pairing_screen_init();
             lv_scr_load(ui_Pairing);
-            
+
             if (ui_Code) {
                 lv_label_set_text(ui_Code, pairingCode.c_str());
             }
             if (ui_Title) {
                 lv_label_set_text(ui_Title, deviceId.c_str());
             }
-            
-            // Send new pairing request
+
             sendPairingRequest();
+
+            unpairDetectedAt = 0;
             return;
         }
     }
+    else {
+        // paired state is stable again → reset timer
+        unpairDetectedAt = 0;
+    }
+}
     
     /* Skip sensor readings if not paired */
     if (!devicePaired) {
@@ -766,7 +905,7 @@ void loop()
         float combined = weightAccel * normAccel + weightGyro * normGyro;
         smoothed = emaAlpha * combined + (1 - emaAlpha) * smoothed;
 
-        int intensity = smoothed * 100;
+        int intensity = clampInt((int)(smoothed * 100), 0, 100);
 
         if (ui_ACTIVITY) lv_arc_set_value(ui_ACTIVITY, intensity);
         if (ui_ACTIVITY_VALUE)
@@ -778,7 +917,7 @@ void loop()
         lastDataSend = millis();
         
         // Send data even if beatAvg is 0 (allows motion-only data)
-        int currentIntensity = smoothed * 100;
+        int currentIntensity = clampInt((int)(smoothed * 100), 0, 100);
         sendSensorData(beatAvg, currentIntensity);
         
         // Debug output

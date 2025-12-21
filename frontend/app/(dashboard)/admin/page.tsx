@@ -14,7 +14,7 @@ import { Search, ChevronsUpDown, Check, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { useRoleProtection } from "@/hooks/use-role-protection"
-import { UserRole, authApi, tokenManager, UserProfile } from "@/lib/api"
+import { UserRole, authApi, tokenManager, UserProfile, metricsApi } from "@/lib/api"
 
 const AdminPage = () => {
 	// Protect this route - only allow ADMIN and SUPER_ADMIN
@@ -28,6 +28,11 @@ const AdminPage = () => {
 	const [open, setOpen] = useState(false)
 	const [selectedMetric, setSelectedMetric] = useState<"All" | "HeartRate" | "ActivityLevel" | "StressLevel">("All")
 	const [timeRange, setTimeRange] = useState("live")
+	
+	// Metrics state for selected student
+	const [heartRate, setHeartRate] = useState<number>(0)
+	const [activityLevel, setActivityLevel] = useState<number>(0)
+	const [stressLevel, setStressLevel] = useState<number>(0)
 
 	// Fetch students from database
 	useEffect(() => {
@@ -50,6 +55,51 @@ const AdminPage = () => {
 
 		fetchStudents()
 	}, [])
+
+	// Fetch metrics for selected student
+	useEffect(() => {
+		if (!selectedStudent) {
+			// Reset metrics when no student is selected
+			setHeartRate(0)
+			setActivityLevel(0)
+			setStressLevel(0)
+			return
+		}
+
+		const fetchMetrics = async () => {
+			const token = tokenManager.getToken()
+			if (!token) return
+
+			try {
+				const studentId = parseInt(selectedStudent)
+				const metrics = await metricsApi.getStudentLatestMetrics(token, studentId)
+				if (metrics && metrics.length > 0) {
+					const latest = metrics[0]
+					setHeartRate(Math.round(latest.heart_rate))
+					setActivityLevel(Math.round(latest.motion_intensity))
+					setStressLevel(Math.round(latest.anomaly_score * 100))
+				} else {
+					// No data available for this student
+					setHeartRate(0)
+					setActivityLevel(0)
+					setStressLevel(0)
+				}
+			} catch (error) {
+				console.error('Error fetching student metrics:', error)
+				setHeartRate(0)
+				setActivityLevel(0)
+				setStressLevel(0)
+			}
+		}
+
+		// Fetch immediately
+		fetchMetrics()
+
+		// Then fetch every 1 second for real-time updates
+		const interval = setInterval(fetchMetrics, 1000)
+
+		return () => clearInterval(interval)
+	}, [selectedStudent])
 
 	const filteredStudents = students.filter(
 		(student) =>
@@ -220,17 +270,27 @@ const AdminPage = () => {
 				{/* LEFT */}
 				<div className="flex-1 min-w-0 flex flex-col gap-4 lg:min-h-0 lg:overflow-y-auto">
 					<div className="flex-shrink-0">
-					<UserCards student={transformedStudent} />
+					<UserCards 
+						heartRate={heartRate}
+						activityLevel={activityLevel}
+						stressLevel={stressLevel}
+						student={transformedStudent}
+					/>
 					</div>
 					<div className="flex-1 min-h-[400px]">
-					<AppAreaChart selectedMetric={selectedMetric} timeRange={timeRange} student={transformedStudent} />
+					<AppAreaChart 
+						selectedMetric={selectedMetric} 
+						timeRange={timeRange} 
+						student={transformedStudent}
+						studentId={selectedStudent ? parseInt(selectedStudent) : undefined}
+					/>
 					</div>
 				</div>
 
 				{/* RIGHT */}
 				<div className="w-full lg:w-1/3 min-w-[300px] flex flex-col gap-4 lg:overflow-y-auto">
 					<div className="flex-[0.6] min-h-0">
-					<AlertCards student={transformedStudent} />
+						<AlertCards student={transformedStudent} />
 					</div>
 					<div className="flex-[0.4] min-h-0">
 						<UserProfileCard studentProfile={currentStudent} />

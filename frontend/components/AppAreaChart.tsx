@@ -126,7 +126,8 @@ export function AppAreaChart({
           date: m.timestamp,
           HeartRate: Math.round(m.heart_rate),
           ActivityLevel: Math.round(m.motion_intensity),
-          StressLevel: Math.round(m.anomaly_score * 100)
+          // Use AI-detected anomaly confidence as stress level (0-100 range)
+          StressLevel: Math.round(m.confidence_anomaly)
         }))
 
         setChartData(transformedData)

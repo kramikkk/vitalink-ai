@@ -22,13 +22,17 @@ interface UserCardsProps {
   activityLevel?: number
   stressLevel?: number
   student?: Student
+  prediction?: string
+  anomalyScore?: number
 }
 
-export function UserCards({ 
-  heartRate = 0, 
-  activityLevel = 0, 
+export function UserCards({
+  heartRate = 0,
+  activityLevel = 0,
   stressLevel = 0,
-  student
+  student,
+  prediction = "NORMAL",
+  anomalyScore = 0
 }: UserCardsProps = {}) {
   
   // Check if we have any data
@@ -116,7 +120,7 @@ export function UserCards({
               <Activity className="size-4" />
             </CardDescription>
             <CardTitle className="text-2xl lg:text-3xl font-semibold tabular-nums truncate mb-2 sm:mb-0">
-              {activityLevel > 0 ? `${activityLevel}%` : "--"}
+              {activityLevel}%
             </CardTitle>
           </div>
         </CardHeader>
@@ -148,12 +152,18 @@ export function UserCards({
             </Badge>
           </div>
         </CardHeader>
-        <CardFooter className="flex-row items-center justify-between gap-1.5 text-sm flex-shrink-0">
-          <div className={cn("font-medium", getStressColor(stressLevel))}>
-            {getStressStatus(stressLevel)}
+        <CardFooter className="flex-col items-start gap-1.5 text-sm flex-shrink-0">
+          <div className="flex w-full items-center justify-between">
+            <div className={cn("font-medium", getStressColor(stressLevel))}>
+              {getStressStatus(stressLevel)}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Isolation Forest
+            </div>
           </div>
-          <div className="text-xs text-muted-foreground">
-            Isolation Forest
+          <div className="flex w-full items-center justify-between text-xs text-muted-foreground">
+            <span>Prediction: <span className={cn("font-medium", heartRate === 0 ? "text-muted-foreground" : prediction === "ANOMALY" ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400")}>{heartRate === 0 ? "No Data" : prediction}</span></span>
+            <span>Score: <span className="font-mono">{heartRate === 0 ? "--" : anomalyScore.toFixed(4)}</span></span>
           </div>
         </CardFooter>
         <div className="absolute bottom-7 right-0 pointer-events-none">

@@ -33,6 +33,8 @@ const AdminPage = () => {
 	const [heartRate, setHeartRate] = useState<number>(0)
 	const [activityLevel, setActivityLevel] = useState<number>(0)
 	const [stressLevel, setStressLevel] = useState<number>(0)
+	const [prediction, setPrediction] = useState<string>("NORMAL")
+	const [anomalyScore, setAnomalyScore] = useState<number>(0)
 
 	// Fetch students from database
 	useEffect(() => {
@@ -63,6 +65,8 @@ const AdminPage = () => {
 			setHeartRate(0)
 			setActivityLevel(0)
 			setStressLevel(0)
+			setPrediction("NORMAL")
+			setAnomalyScore(0)
 			return
 		}
 
@@ -77,18 +81,25 @@ const AdminPage = () => {
 					const latest = metrics[0]
 					setHeartRate(Math.round(latest.heart_rate))
 					setActivityLevel(Math.round(latest.motion_intensity))
-					setStressLevel(Math.round(latest.anomaly_score * 100))
+					// Use AI-detected anomaly confidence as stress level (0-100 range)
+					setStressLevel(Math.round(latest.confidence_anomaly))
+					setPrediction(latest.prediction)
+					setAnomalyScore(latest.anomaly_score)
 				} else {
 					// No data available for this student
 					setHeartRate(0)
 					setActivityLevel(0)
 					setStressLevel(0)
+					setPrediction("NORMAL")
+					setAnomalyScore(0)
 				}
 			} catch (error) {
 				console.error('Error fetching student metrics:', error)
 				setHeartRate(0)
 				setActivityLevel(0)
 				setStressLevel(0)
+				setPrediction("NORMAL")
+				setAnomalyScore(0)
 			}
 		}
 
@@ -270,11 +281,13 @@ const AdminPage = () => {
 				{/* LEFT */}
 				<div className="flex-1 min-w-0 flex flex-col gap-4 lg:min-h-0 lg:overflow-y-auto">
 					<div className="flex-shrink-0">
-					<UserCards 
+					<UserCards
 						heartRate={heartRate}
 						activityLevel={activityLevel}
 						stressLevel={stressLevel}
 						student={transformedStudent}
+						prediction={prediction}
+						anomalyScore={anomalyScore}
 					/>
 					</div>
 					<div className="flex-1 min-h-[400px]">

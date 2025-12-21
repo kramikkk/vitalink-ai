@@ -21,6 +21,8 @@ const page = () => {
   const [heartRate, setHeartRate] = useState<number>(0)
   const [activityLevel, setActivityLevel] = useState<number>(0)
   const [stressLevel, setStressLevel] = useState<number>(0)
+  const [prediction, setPrediction] = useState<string>("NORMAL")
+  const [anomalyScore, setAnomalyScore] = useState<number>(0)
 
   // Fetch metrics from backend
   useEffect(() => {
@@ -34,8 +36,10 @@ const page = () => {
           const latest = metrics[0] // Get the most recent metric
           setHeartRate(Math.round(latest.heart_rate))
           setActivityLevel(Math.round(latest.motion_intensity))
-          // Calculate stress level from anomaly score (0-100 range)
-          setStressLevel(Math.round(latest.anomaly_score * 100))
+          // Use AI-detected anomaly confidence as stress level (0-100 range)
+          setStressLevel(Math.round(latest.confidence_anomaly))
+          setPrediction(latest.prediction)
+          setAnomalyScore(latest.anomaly_score)
         }
       } catch (error) {
         console.error('Error fetching metrics:', error)
@@ -81,10 +85,12 @@ const page = () => {
         <div className="flex-1 min-w-0 flex flex-col gap-4 lg:min-h-0 lg:overflow-y-auto">
           {/* UserCards takes natural height */}
           <div className="flex-shrink-0">
-            <UserCards 
-              heartRate={heartRate} 
-              activityLevel={activityLevel} 
+            <UserCards
+              heartRate={heartRate}
+              activityLevel={activityLevel}
               stressLevel={stressLevel}
+              prediction={prediction}
+              anomalyScore={anomalyScore}
             />
           </div>
           {/* AppAreaChart fills remaining space */}

@@ -1,0 +1,129 @@
+import pandas as pd
+import numpy as np
+import joblib
+import os
+from sklearn.ensemble import IsolationForest
+from sklearn.preprocessing import StandardScaler
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_PATH = os.path.join(BASE_DIR, "training_data.csv")
+MODEL_PATH = os.path.join(BASE_DIR, "model.joblib")
+SCALER_PATH = os.path.join(BASE_DIR, "scaler.joblib")
+
+def train_model():
+    """
+    Train the Isolation Forest model using training data.
+    Returns success message or raises error if training data is missing.
+    """
+    if not os.path.exists(DATA_PATH):
+        raise FileNotFoundError(f"training_data.csv is missing at {DATA_PATH}")
+
+    df = pd.read_csv(DATA_PATH)
+    df = df.apply(pd.to_numeric, errors="coerce").dropna()
+
+    if len(df) < 10:
+        raise ValueError("Not enough training data. Need at least 10 samples.")
+
+    X = df[["heart_rate", "motion_intensity"]]
+
+    # Scale features
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    # Train Isolation Forest
+    model = IsolationForest(
+        n_estimators=200,
+        contamination=0.05,
+        random_state=42
+    )
+    model.fit(X_scaled)
+
+    # Save model and scaler
+    joblib.dump(model, MODEL_PATH)
+    joblib.dump(scaler, SCALER_PATH)
+
+    return {
+        "message": "Model trained successfully",
+        "training_samples": len(df),
+        "model_path": MODEL_PATH,
+        "scaler_path": SCALER_PATH
+    }
+
+
+def predict(heart_rate: float, motion_intensity: float):
+    """
+    Make prediction on sensor data using trained Isolation Forest model.
+
+    Returns dict with keys matching database schema:
+    - prediction: "NORMAL" or "ANOMALY"
+    - anomaly_score: Raw anomaly score from model
+    - confidence_normal: Confidence percentage for normal state (0-100)
+    - confidence_anomaly: Confidence percentage for anomaly state (0-100)
+    """
+    # Don't run AI if heart rate is 0 or invalid (finger not detected)
+    # Valid heart rate range is 20-255 BPM
+    if heart_rate < 20 or heart_rate > 255:
+        return {
+            "prediction": "NORMAL",
+            "anomaly_score": 0.0,
+            "confidence_normal": 100.0,
+            "confidence_anomaly": 0.0
+        }
+
+    # Check if model exists, return defaults if not trained
+    if not os.path.exists(MODEL_PATH) or not os.path.exists(SCALER_PATH):
+        return {
+            "prediction": "NORMAL",
+            "anomaly_score": 0.0,
+            "confidence_normal": 100.0,
+            "confidence_anomaly": 0.0
+        }
+
+    try:
+        # Load model and scaler
+        model = joblib.load(MODEL_PATH)
+        scaler = joblib.load(SCALER_PATH)
+
+        # Prepare data
+        data = np.array([[heart_rate, motion_intensity]])
+        scaled = scaler.transform(data)
+
+        # Make prediction
+        pred = model.predict(scaled)[0]
+        score = model.decision_function(scaled)[0]
+
+        # Convert prediction to status
+        status = "NORMAL" if pred == 1 else "ANOMALY"
+
+        # Convert anomaly score to confidence percentages (0-100)
+        # Isolation Forest: positive score = normal, negative score = anomaly
+        # Score range is roughly -0.5 (high anomaly) to +0.5 (very normal)
+        # Map: +0.5 -> 0% stress, -0.5 -> 100% stress
+        confidence_anomaly = max(0, min(100, (0.5 - score) * 100))
+        confidence_normal = 100 - confidence_anomaly
+
+        return {
+            "prediction": status,
+            "anomaly_score": round(float(score), 4),
+            "confidence_normal": round(confidence_normal, 2),
+            "confidence_anomaly": round(confidence_anomaly, 2)
+        }
+
+    except Exception as e:
+        print(f"Error in prediction: {e}")
+        # Return defaults on error
+        return {
+            "prediction": "NORMAL",
+            "anomaly_score": 0.0,
+            "confidence_normal": 100.0,
+            "confidence_anomaly": 0.0
+        }
+
+
+def is_model_trained():
+    """Check if the model has been trained and files exist."""
+    return os.path.exists(MODEL_PATH) and os.path.exists(SCALER_PATH)
+
+
+if __name__ == "__main__":
+    print(train_model())

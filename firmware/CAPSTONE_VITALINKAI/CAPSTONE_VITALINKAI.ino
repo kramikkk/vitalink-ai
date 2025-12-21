@@ -458,26 +458,53 @@ bool checkPairingStatus() {
     return paired;
 }
 
+int stressLevel = 0;  // Global variable to store stress level from backend
+
 void sendSensorData(int heartRate, int motionIntensity) {
     if (WiFi.status() != WL_CONNECTED) return;
-    
+
     HTTPClient http;
     String url = String(BACKEND_URL) + "/metrics/sensor-data";
-    
+
     http.begin(url);
     http.addHeader("Content-Type", "application/json");
-    
+
     String payload = "{";
     payload += "\"device_id\":\"" + deviceId + "\",";
     payload += "\"heart_rate\":" + String(heartRate) + ",";
     payload += "\"motion_intensity\":" + String(motionIntensity);
     payload += "}";
-    
+
     int httpCode = http.POST(payload);
-    
+
     if (httpCode > 0) {
         if (httpCode == 200) {
+            String response = http.getString();
             Serial.println("Sensor data sent successfully");
+
+            // Parse confidence_anomaly from JSON response (this is the stress level)
+            // Response format: {"message":"...","metric_id":123,"user_id":1,"prediction":"NORMAL","anomaly_score":0.15,"confidence_anomaly":45.2}
+            int confIdx = response.indexOf("\"confidence_anomaly\":");
+            if (confIdx != -1) {
+                int colonIdx = response.indexOf(":", confIdx);
+                int endIdx = response.indexOf(",", colonIdx);
+                if (endIdx == -1) endIdx = response.indexOf("}", colonIdx);
+
+                String confStr = response.substring(colonIdx + 1, endIdx);
+                stressLevel = (int)confStr.toFloat();  // Convert to int (0-100)
+
+                Serial.printf("Stress Level: %d%%\n", stressLevel);
+
+                // Update UI immediately
+                if (ui_STRESS) lv_arc_set_value(ui_STRESS, stressLevel);
+                if (ui_STRESS_VALUE) {
+                    if (stressLevel > 0) {
+                        lv_label_set_text_fmt(ui_STRESS_VALUE, "%d", stressLevel);
+                    } else {
+                        lv_label_set_text(ui_STRESS_VALUE, "--");
+                    }
+                }
+            }
         } else {
             Serial.printf("Sensor data send failed: HTTP %d\n", httpCode);
             String response = http.getString();
@@ -486,7 +513,7 @@ void sendSensorData(int heartRate, int motionIntensity) {
     } else {
         Serial.printf("Sensor data send failed: %s\n", http.errorToString(httpCode).c_str());
     }
-    
+
     http.end();
 }
 
@@ -553,6 +580,7 @@ MAX30105 particleSensor;
 const byte RATE_SIZE = 4;
 byte rates[RATE_SIZE];
 byte rateSpot = 0;
+byte ratesFilled = 0;  // Track how many rate slots have valid data
 
 long lastBeat = 0;
 float beatsPerMinute = 0;
@@ -844,6 +872,7 @@ if (millis() - lastPairingCheck >= checkInterval) {
             fingerPresent = false;
             settlingDone = false;
             beatAvg = 0;
+            ratesFilled = 0;  // Reset counter when finger is removed
 
             if (ui_HEART) lv_arc_set_value(ui_HEART, 0);
             if (ui_BPM_VALUE) lv_label_set_text(ui_BPM_VALUE, "--");
@@ -855,6 +884,7 @@ if (millis() - lastPairingCheck >= checkInterval) {
             fingerStartTime = millis();
             rateSpot = 0;
             memset(rates, 0, sizeof(rates));
+            ratesFilled = 0;  // Reset counter when finger is first placed
             if (ui_BPM_VALUE) lv_label_set_text(ui_BPM_VALUE, "...");
             return;
         }
@@ -868,22 +898,26 @@ if (millis() - lastPairingCheck >= checkInterval) {
                 rates[rateSpot++] = (byte)beatsPerMinute;
                 rateSpot %= RATE_SIZE;
 
+                // Track how many valid samples we have (up to RATE_SIZE)
+                if (ratesFilled < RATE_SIZE) ratesFilled++;
+
                 beatAvg = 0;
                 for (byte i = 0; i < RATE_SIZE; i++) beatAvg += rates[i];
                 beatAvg /= RATE_SIZE;
             }
         }
 
-        if (!settlingDone &&
-            millis() - fingerStartTime < FINGER_SETTLE_TIME) {
-            if (ui_BPM_VALUE) lv_label_set_text(ui_BPM_VALUE, "...");
-            return;
+        // Update display immediately when ratesFilled >= RATE_SIZE
+        // Show "--" or value directly, no settling time needed for display
+        if (ratesFilled >= RATE_SIZE) {
+            settlingDone = true;
+            if (ui_HEART) lv_arc_set_value(ui_HEART, beatAvg);
+            if (ui_BPM_VALUE) lv_label_set_text_fmt(ui_BPM_VALUE, "%d", beatAvg);
+        } else {
+            // Still filling up the rates array, show "--"
+            if (ui_HEART) lv_arc_set_value(ui_HEART, 0);
+            if (ui_BPM_VALUE) lv_label_set_text(ui_BPM_VALUE, "--");
         }
-
-        settlingDone = true;
-        if (ui_HEART) lv_arc_set_value(ui_HEART, beatAvg);
-        if (ui_BPM_VALUE)
-            lv_label_set_text_fmt(ui_BPM_VALUE, "%d", beatAvg);
     }
 
     /* MOTION SENSOR */
@@ -915,12 +949,17 @@ if (millis() - lastPairingCheck >= checkInterval) {
     /* SEND SENSOR DATA TO BACKEND */
     if (millis() - lastDataSend >= DATA_SEND_INTERVAL) {
         lastDataSend = millis();
-        
-        // Send data even if beatAvg is 0 (allows motion-only data)
+
         int currentIntensity = clampInt((int)(smoothed * 100), 0, 100);
-        sendSensorData(beatAvg, currentIntensity);
-        
+
+        // Only send valid heart rate if all rate slots are filled (stable reading)
+        // This prevents sending gradually increasing HR values during initial detection
+        int hrToSend = (ratesFilled >= RATE_SIZE) ? beatAvg : 0;
+
+        sendSensorData(hrToSend, currentIntensity);
+
         // Debug output
-        Serial.printf("Sending: HR=%d, Motion=%d\n", beatAvg, currentIntensity);
+        Serial.printf("Sending: HR=%d, Motion=%d (ratesFilled=%d/%d)\n",
+                     hrToSend, currentIntensity, ratesFilled, RATE_SIZE);
     }
 }

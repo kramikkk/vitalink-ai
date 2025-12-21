@@ -6,6 +6,7 @@ from models_db import User, Metrics, Device
 from utils.auth_utils import get_current_user
 from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel
+from ai_model.model import predict
 
 router = APIRouter(prefix="/metrics", tags=["Metrics"])
 
@@ -29,27 +30,33 @@ def receive_sensor_data(data: SensorDataRequest, db: Session = Depends(get_db)):
     
     if not device.paired or device.user_id is None:
         raise HTTPException(status_code=403, detail="Device not paired to any user")
-    
-    # Create new metrics entry
+
+    # Run AI prediction on incoming sensor data
+    prediction_result = predict(data.heart_rate, data.motion_intensity)
+
+    # Create new metrics entry with AI predictions
     new_metric = Metrics(
         user_id=device.user_id,
         heart_rate=data.heart_rate,
         motion_intensity=data.motion_intensity,
-        prediction="normal",  # Default - will be updated by ML model later
-        anomaly_score=0.0,     # Default - will be updated by ML model later
-        confidence_normal=1.0, # Default - will be updated by ML model later
-        confidence_anomaly=0.0, # Default - will be updated by ML model later
+        prediction=prediction_result["prediction"],
+        anomaly_score=prediction_result["anomaly_score"],
+        confidence_normal=prediction_result["confidence_normal"],
+        confidence_anomaly=prediction_result["confidence_anomaly"],
         timestamp=datetime.now(timezone.utc)
     )
-    
+
     db.add(new_metric)
     db.commit()
     db.refresh(new_metric)
-    
+
     return {
         "message": "Sensor data received",
         "metric_id": new_metric.id,
-        "user_id": device.user_id
+        "user_id": device.user_id,
+        "prediction": prediction_result["prediction"],
+        "anomaly_score": prediction_result["anomaly_score"],
+        "confidence_anomaly": prediction_result["confidence_anomaly"]
     }
 
 @router.get("/latest")

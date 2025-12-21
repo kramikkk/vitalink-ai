@@ -5,3 +5,7 @@ python-jose[cryptography]
 passlib[bcrypt]
 python-multipart
 pydantic[email]
+pandas
+numpy
+scikit-learn
+joblib

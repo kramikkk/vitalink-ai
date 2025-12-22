@@ -32,20 +32,37 @@ const transitionVariants = {
 export default function HeroSection() {
     return (
         <div className='relative'>
-            <div className='absolute inset-0 z-[-1] h-full'>
-                <LightRays
-                raysOrigin="top-center"
-                raysColor="#00ff88"
-                raysSpeed={0.5}
-                lightSpread={0.9}
-                rayLength={1.4}
-                followMouse={true}
-                mouseInfluence={0.02}
-                noiseAmount={0.1}
-                distortion={0.05}
-                />
+            <div className='absolute inset-0 z-[-1] h-full w-full'>
+                {/* Dark mode - green rays */}
+                <div className="hidden dark:block h-full w-full">
+                    <LightRays
+                    raysOrigin="top-center"
+                    raysColor="#00ff88"
+                    raysSpeed={0.5}
+                    lightSpread={0.9}
+                    rayLength={1.4}
+                    followMouse={true}
+                    mouseInfluence={0.02}
+                    noiseAmount={0.1}
+                    distortion={0.05}
+                    />
+                </div>
+                {/* Light mode - darker rays for contrast */}
+                <div className="block dark:hidden h-full w-full">
+                    <LightRays
+                    raysOrigin="top-center"
+                    raysColor="#047857"
+                    raysSpeed={0.5}
+                    lightSpread={0.9}
+                    rayLength={1.4}
+                    followMouse={true}
+                    mouseInfluence={0.02}
+                    noiseAmount={0.1}
+                    distortion={0.05}
+                    />
+                </div>
             </div>
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-40 w-full bg-gradient-to-b from-transparent to-background"></div>
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-full w-full bg-gradient-to-b from-transparent to-background"></div>
             <HeroHeader />
             <main className="overflow-hidden">
                 <div
@@ -105,7 +122,7 @@ export default function HeroSection() {
                             <div className="text-center sm:mx-auto lg:mr-auto lg:mt-0">
                                 <AnimatedGroup variants={transitionVariants}>
                                     <Link
-                                        href="#link"
+                                        href="#features"
                                         className="hover:bg-background dark:hover:border-t-border bg-muted group mx-auto flex w-fit items-center gap-4 rounded-full border p-1 pl-4 shadow-md shadow-zinc-950/5 transition-colors duration-300 dark:border-t-white/5 dark:shadow-zinc-950">
                                         <span className="text-foreground text-sm">With Isolation Forest AI</span>
                                         <span className="dark:border-background block h-4 w-0.5 border-l bg-white dark:bg-zinc-700"></span>
@@ -195,14 +212,14 @@ export default function HeroSection() {
                                 <div className="inset-shadow-2xs ring-background dark:inset-shadow-white/20 bg-background relative mx-auto max-w-6xl overflow-hidden rounded-2xl border p-4 shadow-lg shadow-zinc-950/15 ring-1">
                                     <Image
                                         className="bg-background aspect-15/8 relative hidden rounded-2xl dark:block"
-                                        src="/DashboardStudentDark.png"
+                                        src="/VitaLinkAI_Dashboard_Dark.png"
                                         alt="app screen"
                                         width="2700"
                                         height="1440"
                                     />
                                     <Image
                                         className="z-2 border-border/25 aspect-15/8 relative rounded-2xl border dark:hidden"
-                                        src="/DashboardStudentLight.png"
+                                        src="/VitaLinkAI_Dashboard_Light.png"
                                         alt="app screen"
                                         width="2700"
                                         height="1440"

@@ -214,18 +214,18 @@ def main():
     print("ALERT GENERATION TEST SCRIPT")
     print("=" * 70)
 
-    # Get user ID from command line or use first user
+    # Get user ID from command line or default to user_id 1
     db = SessionLocal()
     try:
         if len(sys.argv) > 1:
             user_id = int(sys.argv[1])
         else:
-            user = db.query(User).first()
+            user_id = 1  # Default to user_id 1
+            user = db.query(User).filter(User.id == user_id).first()
             if not user:
-                print("❌ No users found. Please create a user first.")
+                print(f"❌ User with ID {user_id} not found.")
                 return
-            user_id = user.id
-            print(f"Using first user: {user.username} (ID: {user_id})")
+            print(f"Using user: {user.username} (ID: {user_id})")
     finally:
         db.close()
 

@@ -920,31 +920,48 @@ if (millis() - lastPairingCheck >= checkInterval) {
         }
     }
 
-    /* MOTION SENSOR */
-    if (millis() - lastMPUread >= MPU_INTERVAL) {
+/* MOTION SENSOR */
+if (millis() - lastMPUread >= MPU_INTERVAL) {
 
-        lastMPUread = millis();
+    lastMPUread = millis();
 
-        int16_t ax, ay, az, gx, gy, gz;
-        mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
+    int16_t ax, ay, az, gx, gy, gz;
+    mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
-        float accelMag = sqrt(ax*ax + ay*ay + az*az);
-        float gyroMag  = sqrt(gx*gx + gy*gy + gz*gz);
+    float axf = (float)ax;
+    float ayf = (float)ay;
+    float azf = (float)az;
+    float gxf = (float)gx;
+    float gyf = (float)gy;
+    float gzf = (float)gz;
 
-        float normAccel = clamp01(
-            (accelMag - accelMin) / (accelMax - accelMin));
-        float normGyro = clamp01(
-            (gyroMag - gyroMin) / (gyroMax - gyroMin));
+    float accelMag = sqrt(axf*axf + ayf*ayf + azf*azf);
+    float gyroMag  = sqrt(gxf*gxf + gyf*gyf + gzf*gzf);
 
-        float combined = weightAccel * normAccel + weightGyro * normGyro;
-        smoothed = emaAlpha * combined + (1 - emaAlpha) * smoothed;
+    float normAccel = 0;
+    if (accelMax > accelMin)
+        normAccel = (accelMag - accelMin) / (accelMax - accelMin);
 
-        int intensity = clampInt((int)(smoothed * 100), 0, 100);
+    float normGyro = 0;
+    if (gyroMax > gyroMin)
+        normGyro = (gyroMag - gyroMin) / (gyroMax - gyroMin);
 
-        if (ui_ACTIVITY) lv_arc_set_value(ui_ACTIVITY, intensity);
-        if (ui_ACTIVITY_VALUE)
-            lv_label_set_text_fmt(ui_ACTIVITY_VALUE, "%d", intensity);
-    }
+    normAccel = clamp01(normAccel);
+    normGyro  = clamp01(normGyro);
+
+    float combined = weightAccel * normAccel + weightGyro * normGyro;
+
+    if (!isfinite(combined)) combined = 0;
+    if (!isfinite(smoothed)) smoothed = 0;
+
+    smoothed = emaAlpha * combined + (1 - emaAlpha) * smoothed;
+
+    int intensity = clampInt((int)(smoothed * 100), 0, 100);
+
+    if (ui_ACTIVITY) lv_arc_set_value(ui_ACTIVITY, intensity);
+    if (ui_ACTIVITY_VALUE)
+        lv_label_set_text_fmt(ui_ACTIVITY_VALUE, "%d", intensity);
+}
     
     /* SEND SENSOR DATA TO BACKEND */
     if (millis() - lastDataSend >= DATA_SEND_INTERVAL) {

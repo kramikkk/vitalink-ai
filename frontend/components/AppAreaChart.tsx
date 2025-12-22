@@ -56,19 +56,26 @@ interface AppAreaChartProps {
   timeRange?: string
   student?: Student
   studentId?: number  // For admin mode - if provided, fetch data for this student
+  isStale?: boolean
 }
 
-export function AppAreaChart({ 
-  selectedMetric = "All", 
+export function AppAreaChart({
+  selectedMetric = "All",
   timeRange = "live",
   student,
-  studentId  // Admin mode: fetch data for specific student
+  studentId,  // Admin mode: fetch data for specific student
+  isStale = false
 }: AppAreaChartProps) {
   const [chartData, setChartData] = React.useState<Array<{date: string, HeartRate: number, ActivityLevel: number, StressLevel: number}>>([])
   const [loading, setLoading] = React.useState(true)
 
   // Fetch data from backend based on time range
   React.useEffect(() => {
+    // Don't fetch if device is offline (stale data) in live mode
+    if (isStale && timeRange === "live") {
+      return
+    }
+
     const fetchData = async () => {
       const token = tokenManager.getToken()
       if (!token) {
@@ -80,7 +87,7 @@ export function AppAreaChart({
         setLoading(true)
         const now = new Date()
         let startTime: Date
-        
+
         // Calculate start time based on time range
         switch(timeRange) {
           case "live":
@@ -106,7 +113,7 @@ export function AppAreaChart({
         }
 
         // Fetch metrics - use student-specific endpoint if studentId is provided (admin mode)
-        const metrics = studentId 
+        const metrics = studentId
           ? await metricsApi.getStudentMetricsHistory(
               token,
               studentId,
@@ -141,12 +148,12 @@ export function AppAreaChart({
 
     fetchData()
 
-    // Auto-refresh for live mode
-    if (timeRange === "live") {
+    // Auto-refresh for live mode (only if device is online)
+    if (timeRange === "live" && !isStale) {
       const interval = setInterval(fetchData, 1000) // Refresh every second for live data
       return () => clearInterval(interval)
     }
-  }, [timeRange, studentId])
+  }, [timeRange, studentId, isStale])
 
   // Aggregate data based on time range
   // Process raw per-second data from database according to filter requirements
@@ -454,11 +461,11 @@ export function AppAreaChart({
   }
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card className={`h-full flex flex-col ${isStale ? 'opacity-60' : ''}`}>
       <CardHeader className="flex-shrink-0 border-b">
         <CardTitle>Wellness Trend Chart</CardTitle>
         <CardDescription>
-          {loading ? "Loading data..." : `Showing ${processedData.length} data points`}
+          {loading ? "Loading data..." : isStale ? "Showing historical data (device offline)" : `Showing ${processedData.length} data points`}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 px-2 pt-4 sm:px-6 sm:pt-6 min-h-0">

@@ -45,9 +45,10 @@ interface Alert {
 interface AlertCardsProps {
   student?: Student
   studentId?: number
+  isStale?: boolean
 }
 
-const AlertCards = ({ student, studentId }: AlertCardsProps) => {
+const AlertCards = ({ student, studentId, isStale = false }: AlertCardsProps) => {
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [loading, setLoading] = useState(true)
   const [readFilter, setReadFilter] = useState<"unread" | "all">("unread")
@@ -55,6 +56,11 @@ const AlertCards = ({ student, studentId }: AlertCardsProps) => {
   const isAdmin = !!studentId // If studentId is provided, this is admin view
 
   useEffect(() => {
+    // Don't fetch alerts if device is offline (stale data)
+    if (isStale) {
+      return
+    }
+
     const fetchAlerts = async () => {
       try {
         const token = tokenManager.getToken()
@@ -85,10 +91,10 @@ const AlertCards = ({ student, studentId }: AlertCardsProps) => {
     }
 
     fetchAlerts()
-    // Poll for new alerts every 5 seconds
-    const interval = setInterval(fetchAlerts, 5000)
+    // Poll for new alerts every 1 second (only when device is online)
+    const interval = setInterval(fetchAlerts, 1000)
     return () => clearInterval(interval)
-  }, [studentId])
+  }, [studentId, isStale])
 
   const markAsRead = async (alertId: number) => {
     try {
@@ -239,7 +245,7 @@ const AlertCards = ({ student, studentId }: AlertCardsProps) => {
         <CardHeader>
           <div className="flex items-center justify-between gap-2 mb-2">
             <CardTitle className="flex items-center gap-2">
-            <TriangleAlert className="size-5 text-yellow-500" /> {/* Added icon here */}
+            <TriangleAlert className="size-5 text-red-500" /> {/* Added icon here */}
               Alerts
               {unreadCount > 0 && (
                 <Badge variant="destructive" className="ml-2">
@@ -291,7 +297,7 @@ const AlertCards = ({ student, studentId }: AlertCardsProps) => {
               <Empty>
                 <EmptyHeader>
                   <EmptyMedia variant="icon">
-                    <TriangleAlert className="text-green-500" />
+                    <TriangleAlert className="text-red-500" />
                   </EmptyMedia>
                   <EmptyTitle>
                     {readFilter === "unread" && typeFilter === "all" ? "All Read!" : "No Alerts"}
@@ -363,7 +369,7 @@ const AlertCards = ({ student, studentId }: AlertCardsProps) => {
         {filteredAlerts.length === 0 && (
           <div className="absolute bottom-10 right-0 pointer-events-none">
             <TriangleAlert
-              className="size-[350px] lg:size-[600px] text-green-300 opacity-20 translate-x-1/3 translate-y-1/3"
+              className="size-[350px] lg:size-[600px] text-red-300 opacity-20 translate-x-1/3 translate-y-1/3"
               strokeWidth={1}
             />
           </div>

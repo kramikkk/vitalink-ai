@@ -35,6 +35,7 @@ const AdminPage = () => {
 	const [stressLevel, setStressLevel] = useState<number>(0)
 	const [prediction, setPrediction] = useState<string>("NORMAL")
 	const [anomalyScore, setAnomalyScore] = useState<number>(0)
+	const [isStale, setIsStale] = useState<boolean>(false)
 
 	// Fetch students from database
 	useEffect(() => {
@@ -67,6 +68,7 @@ const AdminPage = () => {
 			setStressLevel(0)
 			setPrediction("NORMAL")
 			setAnomalyScore(0)
+			setIsStale(false)
 			return
 		}
 
@@ -79,12 +81,20 @@ const AdminPage = () => {
 				const metrics = await metricsApi.getStudentLatestMetrics(token, studentId)
 				if (metrics && metrics.length > 0) {
 					const latest = metrics[0]
+
+					// Check if data is stale (older than 5 seconds)
+					const metricTimestamp = new Date(latest.timestamp).getTime()
+					const now = Date.now()
+					const ageInSeconds = (now - metricTimestamp) / 1000
+					const dataIsStale = ageInSeconds > 5
+
 					setHeartRate(Math.round(latest.heart_rate))
 					setActivityLevel(Math.round(latest.motion_intensity))
 					// Use AI-detected anomaly confidence as stress level (0-100 range)
 					setStressLevel(Math.round(latest.confidence_anomaly))
 					setPrediction(latest.prediction)
 					setAnomalyScore(latest.anomaly_score)
+					setIsStale(dataIsStale)
 				} else {
 					// No data available for this student
 					setHeartRate(0)
@@ -92,14 +102,11 @@ const AdminPage = () => {
 					setStressLevel(0)
 					setPrediction("NORMAL")
 					setAnomalyScore(0)
+					setIsStale(true)
 				}
 			} catch (error) {
 				console.error('Error fetching student metrics:', error)
-				setHeartRate(0)
-				setActivityLevel(0)
-				setStressLevel(0)
-				setPrediction("NORMAL")
-				setAnomalyScore(0)
+				setIsStale(true)
 			}
 		}
 
@@ -135,8 +142,16 @@ const AdminPage = () => {
 				<CardHeader>
 					<div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
 						<div className="flex-1 flex flex-col justify-center">
-							<CardTitle className="text-xl sm:text-2xl lg:text-3xl">
+							<CardTitle className="text-xl sm:text-2xl lg:text-3xl flex items-center gap-3">
 								IoT Health & Activity Dashboard for Admin
+								{selectedStudent && (
+									<span className="flex items-center gap-2">
+										<span className={`h-3 w-3 rounded-full ${isStale ? 'bg-red-500 animate-pulse' : 'bg-green-500 animate-pulse'}`}></span>
+										<span className="text-sm font-normal text-muted-foreground">
+											{isStale ? 'Offline' : 'Online'}
+										</span>
+									</span>
+								)}
 							</CardTitle>
 							<CardDescription className="text-sm sm:text-base">
 								View and monitor individual student health metrics
@@ -288,14 +303,16 @@ const AdminPage = () => {
 						student={transformedStudent}
 						prediction={prediction}
 						anomalyScore={anomalyScore}
+						isStale={isStale}
 					/>
 					</div>
 					<div className="flex-1 min-h-[400px]">
-					<AppAreaChart 
-						selectedMetric={selectedMetric} 
-						timeRange={timeRange} 
+					<AppAreaChart
+						selectedMetric={selectedMetric}
+						timeRange={timeRange}
 						student={transformedStudent}
 						studentId={selectedStudent ? parseInt(selectedStudent) : undefined}
+						isStale={isStale}
 					/>
 					</div>
 				</div>
@@ -303,7 +320,7 @@ const AdminPage = () => {
 				{/* RIGHT */}
 				<div className="w-full lg:w-1/3 min-w-[300px] flex flex-col gap-4 lg:overflow-y-auto">
 					<div className="flex-[0.6] min-h-0">
-						<AlertCards student={transformedStudent} studentId={selectedStudent ? parseInt(selectedStudent) : undefined} />
+						<AlertCards student={transformedStudent} studentId={selectedStudent ? parseInt(selectedStudent) : undefined} isStale={isStale} />
 					</div>
 					<div className="flex-[0.4] min-h-0">
 						<UserProfileCard studentProfile={currentStudent} />

@@ -1,8 +1,7 @@
-import { Activity, Brain, Heart, TrendingDown, TrendingUp } from "lucide-react"
+import { Activity, Brain, Heart } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
-  CardAction,
   CardDescription,
   CardFooter,
   CardHeader,
@@ -24,6 +23,7 @@ interface UserCardsProps {
   student?: Student
   prediction?: string
   anomalyScore?: number
+  isStale?: boolean
 }
 
 export function UserCards({
@@ -32,7 +32,8 @@ export function UserCards({
   stressLevel = 0,
   student,
   prediction = "NORMAL",
-  anomalyScore = 0
+  anomalyScore = 0,
+  isStale = false
 }: UserCardsProps = {}) {
   
   // Check if we have any data
@@ -84,9 +85,10 @@ export function UserCards({
   }
 
   return (
-    <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(170px,1fr))] flex-shrink-0">
-      {/* Card 1 */}
-      <Card className="@container/card relative overflow-hidden flex flex-col">
+    <div className="space-y-4 flex-shrink-0">
+      <div className={cn("grid gap-4 grid-cols-[repeat(auto-fit,minmax(170px,1fr))]", isStale && "opacity-60")}>
+        {/* Card 1 */}
+        <Card className="@container/card relative overflow-hidden flex flex-col">
         <CardHeader className="flex flex-col sm:flex-row items-start gap-2 flex-1">
           <div className="flex-1 min-w-0">
             <CardDescription className="truncate flex items-center gap-1.5">
@@ -170,6 +172,7 @@ export function UserCards({
           <Brain className="size-150 text-orange-300 opacity-30 translate-x-1/3 translate-y-3/4" strokeWidth={0.5} />
         </div>
       </Card>
+      </div>
     </div>
   )
 }

@@ -9,11 +9,20 @@ router = APIRouter(prefix="/metrics", tags=["Alerts"])
 
 
 def generate_alert_if_needed(db: Session, user_id: int, heart_rate: float, motion_intensity: float,
-                              prediction: str, anomaly_score: float, confidence_anomaly: float):
+                              prediction: str, anomaly_score: float, confidence_anomaly: float,
+                              timestamp: datetime = None):
     """
     Generate AI-driven alerts based on sensor data and predictions.
     Alerts are only created for: High Heart Rate, High Activity, and AI-detected Anomalies (stress/fatigue).
+    Pauses alert generation if data is stale (older than 5 seconds from device offline).
     """
+    # Check if data is stale (older than 5 seconds) - don't generate alerts for offline devices
+    if timestamp:
+        age_seconds = (datetime.now(timezone.utc) - timestamp).total_seconds()
+        if age_seconds > 5:
+            # Data is stale, device is offline - don't generate new alerts
+            return
+
     alerts_to_create = []
 
     # 1. AI Anomaly Detection Alert (covers stress and fatigue detection)

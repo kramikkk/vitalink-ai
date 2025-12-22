@@ -23,6 +23,7 @@ const page = () => {
   const [stressLevel, setStressLevel] = useState<number>(0)
   const [prediction, setPrediction] = useState<string>("NORMAL")
   const [anomalyScore, setAnomalyScore] = useState<number>(0)
+  const [isStale, setIsStale] = useState<boolean>(false)
 
   // Fetch metrics from backend
   useEffect(() => {
@@ -34,15 +35,26 @@ const page = () => {
         const metrics = await metricsApi.getLatestMetrics(token)
         if (metrics && metrics.length > 0) {
           const latest = metrics[0] // Get the most recent metric
+
+          // Check if data is stale (older than 5 seconds)
+          const metricTimestamp = new Date(latest.timestamp).getTime()
+          const now = Date.now()
+          const ageInSeconds = (now - metricTimestamp) / 1000
+          const dataIsStale = ageInSeconds > 5
+
           setHeartRate(Math.round(latest.heart_rate))
           setActivityLevel(Math.round(latest.motion_intensity))
-          // Use AI-detected anomaly confidence as stress level (0-100 range)
           setStressLevel(Math.round(latest.confidence_anomaly))
           setPrediction(latest.prediction)
           setAnomalyScore(latest.anomaly_score)
+          setIsStale(dataIsStale)
+        } else {
+          // No data at all
+          setIsStale(true)
         }
       } catch (error) {
         console.error('Error fetching metrics:', error)
+        setIsStale(true)
       }
     }
 
@@ -62,7 +74,15 @@ const page = () => {
         <CardHeader>
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
             <div className="flex-1">
-              <CardTitle className="text-xl sm:text-2xl lg:text-3xl">IoT Health & Activity Dashboard for Students</CardTitle>
+              <CardTitle className="text-xl sm:text-2xl lg:text-3xl flex items-center gap-3">
+                IoT Health & Activity Dashboard for Students
+                <span className="flex items-center gap-2">
+                  <span className={`h-3 w-3 rounded-full ${isStale ? 'bg-red-500 animate-pulse' : 'bg-green-500 animate-pulse'}`}></span>
+                  <span className="text-sm font-normal text-muted-foreground">
+                    {isStale ? 'Offline' : 'Online'}
+                  </span>
+                </span>
+              </CardTitle>
               <CardDescription className="text-sm sm:text-base">
                 Monitor your health metrics and activity levels in real-time
               </CardDescription>
@@ -91,11 +111,12 @@ const page = () => {
               stressLevel={stressLevel}
               prediction={prediction}
               anomalyScore={anomalyScore}
+              isStale={isStale}
             />
           </div>
           {/* AppAreaChart fills remaining space */}
           <div className="flex-1 min-h-[400px]">
-            <AppAreaChart selectedMetric={selectedMetric} timeRange={timeRange} />
+            <AppAreaChart selectedMetric={selectedMetric} timeRange={timeRange} isStale={isStale} />
           </div>
         </div>
 
@@ -103,7 +124,7 @@ const page = () => {
         <div className="w-full lg:w-1/3 min-w-[300px] flex flex-col gap-4 lg:overflow-y-auto">
           {/* AlertCards takes 60% of available space */}
           <div className="flex-[0.6] min-h-0">
-            <AlertCards />
+            <AlertCards isStale={isStale} />
           </div>
           {/* UserProfileCard takes 40% of available space */}
           <div className="flex-[0.4] min-h-0">

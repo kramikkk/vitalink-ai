@@ -60,7 +60,8 @@ def receive_sensor_data(data: SensorDataRequest, db: Session = Depends(get_db)):
         motion_intensity=data.motion_intensity,
         prediction=prediction_result["prediction"],
         anomaly_score=prediction_result["anomaly_score"],
-        confidence_anomaly=prediction_result["confidence_anomaly"]
+        confidence_anomaly=prediction_result["confidence_anomaly"],
+        timestamp=new_metric.timestamp
     )
 
     return {

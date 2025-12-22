@@ -621,7 +621,7 @@ void setup()
 
     lv_init();
     tft.begin();
-    tft.setRotation(0);
+    tft.setRotation(1);
 
     lv_disp_draw_buf_init(&draw_buf, buf, NULL,
                           screenWidth * screenHeight / 10);

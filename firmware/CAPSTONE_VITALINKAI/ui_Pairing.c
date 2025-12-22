@@ -5,7 +5,7 @@
 
 #include "ui.h"
 
-lv_obj_t *ui_Pairing = NULL;lv_obj_t *ui_Title = NULL;lv_obj_t *ui_Code = NULL;lv_obj_t *ui_Subtitle = NULL;
+lv_obj_t *ui_Pairing = NULL;lv_obj_t *ui_Title = NULL;lv_obj_t *ui_Code = NULL;lv_obj_t *ui_Subtitle = NULL;lv_obj_t *ui_Spinner3 = NULL;lv_obj_t *ui_Image11 = NULL;
 // event funtions
 
 // build funtions
@@ -14,6 +14,8 @@ void ui_Pairing_screen_init(void)
 {
 ui_Pairing = lv_obj_create(NULL);
 lv_obj_clear_flag( ui_Pairing, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
+lv_obj_set_style_bg_color(ui_Pairing, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT );
+lv_obj_set_style_bg_opa(ui_Pairing, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
 
 ui_Title = lv_label_create(ui_Pairing);
 lv_obj_set_width( ui_Title, LV_SIZE_CONTENT);  /// 1
@@ -21,7 +23,7 @@ lv_obj_set_height( ui_Title, LV_SIZE_CONTENT);   /// 1
 lv_obj_set_x( ui_Title, 0 );
 lv_obj_set_y( ui_Title, -35 );
 lv_obj_set_align( ui_Title, LV_ALIGN_CENTER );
-lv_label_set_text(ui_Title,"Pairing Device");
+lv_label_set_text(ui_Title,"VL-000000");
 lv_obj_set_style_text_color(ui_Title, lv_color_hex(0x37E23F), LV_PART_MAIN | LV_STATE_DEFAULT );
 lv_obj_set_style_text_opa(ui_Title, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_text_font(ui_Title, &lv_font_montserrat_16, LV_PART_MAIN| LV_STATE_DEFAULT);
@@ -31,6 +33,8 @@ lv_obj_set_width( ui_Code, LV_SIZE_CONTENT);  /// 1
 lv_obj_set_height( ui_Code, LV_SIZE_CONTENT);   /// 1
 lv_obj_set_align( ui_Code, LV_ALIGN_CENTER );
 lv_label_set_text(ui_Code,"------");
+lv_obj_set_style_text_color(ui_Code, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT );
+lv_obj_set_style_text_opa(ui_Code, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_text_font(ui_Code, &lv_font_montserrat_38, LV_PART_MAIN| LV_STATE_DEFAULT);
 
 ui_Subtitle = lv_label_create(ui_Pairing);
@@ -39,8 +43,33 @@ lv_obj_set_height( ui_Subtitle, LV_SIZE_CONTENT);   /// 1
 lv_obj_set_x( ui_Subtitle, 0 );
 lv_obj_set_y( ui_Subtitle, 35 );
 lv_obj_set_align( ui_Subtitle, LV_ALIGN_CENTER );
-lv_label_set_text(ui_Subtitle,"Enter code to web app");
+lv_label_set_text(ui_Subtitle,"Pair code in Web App");
+lv_obj_set_style_text_color(ui_Subtitle, lv_color_hex(0xCDCDCD), LV_PART_MAIN | LV_STATE_DEFAULT );
+lv_obj_set_style_text_opa(ui_Subtitle, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_text_font(ui_Subtitle, &lv_font_montserrat_16, LV_PART_MAIN| LV_STATE_DEFAULT);
+
+ui_Spinner3 = lv_spinner_create(ui_Pairing,1000,90);
+lv_obj_set_width( ui_Spinner3, 80);
+lv_obj_set_height( ui_Spinner3, 80);
+lv_obj_set_x( ui_Spinner3, 25 );
+lv_obj_set_y( ui_Spinner3, 100 );
+lv_obj_set_align( ui_Spinner3, LV_ALIGN_CENTER );
+lv_obj_clear_flag( ui_Spinner3, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_GESTURE_BUBBLE | LV_OBJ_FLAG_SNAPPABLE | LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_SCROLL_ELASTIC | LV_OBJ_FLAG_SCROLL_MOMENTUM | LV_OBJ_FLAG_SCROLL_CHAIN );    /// Flags
+lv_obj_set_style_transform_zoom(ui_Spinner3, 100, LV_PART_MAIN| LV_STATE_DEFAULT);
+
+lv_obj_set_style_arc_color(ui_Spinner3, lv_color_hex(0x22B818), LV_PART_INDICATOR | LV_STATE_DEFAULT );
+lv_obj_set_style_arc_opa(ui_Spinner3, 255, LV_PART_INDICATOR| LV_STATE_DEFAULT);
+
+ui_Image11 = lv_img_create(ui_Pairing);
+lv_img_set_src(ui_Image11, &ui_img_vitalink_logo_circle_png);
+lv_obj_set_width( ui_Image11, LV_SIZE_CONTENT);  /// 60
+lv_obj_set_height( ui_Image11, LV_SIZE_CONTENT);   /// 60
+lv_obj_set_x( ui_Image11, 0 );
+lv_obj_set_y( ui_Image11, -80 );
+lv_obj_set_align( ui_Image11, LV_ALIGN_CENTER );
+lv_obj_add_flag( ui_Image11, LV_OBJ_FLAG_ADV_HITTEST );   /// Flags
+lv_obj_clear_flag( ui_Image11, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
+lv_img_set_zoom(ui_Image11,200);
 
 }
 
@@ -53,5 +82,7 @@ ui_Pairing= NULL;
 ui_Title= NULL;
 ui_Code= NULL;
 ui_Subtitle= NULL;
+ui_Spinner3= NULL;
+ui_Image11= NULL;
 
 }

@@ -17,6 +17,8 @@ extern lv_obj_t *ui_WiFi;
 extern lv_obj_t *ui_Wifi_Title;
 extern lv_obj_t *ui_IP_Address;
 extern lv_obj_t *ui_WiFI_Subtitle;
+extern lv_obj_t *ui_Spinner2;
+extern lv_obj_t *ui_Image2;
 // CUSTOM VARIABLES
 
 #ifdef __cplusplus

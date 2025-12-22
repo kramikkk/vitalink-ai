@@ -5,7 +5,7 @@
 
 #include "ui.h"
 
-lv_obj_t *ui_WiFi = NULL;lv_obj_t *ui_Wifi_Title = NULL;lv_obj_t *ui_IP_Address = NULL;lv_obj_t *ui_WiFI_Subtitle = NULL;
+lv_obj_t *ui_WiFi = NULL;lv_obj_t *ui_Wifi_Title = NULL;lv_obj_t *ui_IP_Address = NULL;lv_obj_t *ui_WiFI_Subtitle = NULL;lv_obj_t *ui_Spinner2 = NULL;lv_obj_t *ui_Image2 = NULL;
 // event funtions
 
 // build funtions
@@ -14,15 +14,17 @@ void ui_WiFi_screen_init(void)
 {
 ui_WiFi = lv_obj_create(NULL);
 lv_obj_clear_flag( ui_WiFi, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
+lv_obj_set_style_bg_color(ui_WiFi, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT );
+lv_obj_set_style_bg_opa(ui_WiFi, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
 
 ui_Wifi_Title = lv_label_create(ui_WiFi);
 lv_obj_set_width( ui_Wifi_Title, LV_SIZE_CONTENT);  /// 1
 lv_obj_set_height( ui_Wifi_Title, LV_SIZE_CONTENT);   /// 1
 lv_obj_set_x( ui_Wifi_Title, 0 );
-lv_obj_set_y( ui_Wifi_Title, -40 );
+lv_obj_set_y( ui_Wifi_Title, -35 );
 lv_obj_set_align( ui_Wifi_Title, LV_ALIGN_CENTER );
 lv_label_set_text(ui_Wifi_Title,"WiFi Setup");
-lv_obj_set_style_text_color(ui_Wifi_Title, lv_color_hex(0x03D5FF), LV_PART_MAIN | LV_STATE_DEFAULT );
+lv_obj_set_style_text_color(ui_Wifi_Title, lv_color_hex(0x37E23F), LV_PART_MAIN | LV_STATE_DEFAULT );
 lv_obj_set_style_text_opa(ui_Wifi_Title, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_text_font(ui_Wifi_Title, &lv_font_montserrat_16, LV_PART_MAIN| LV_STATE_DEFAULT);
 
@@ -30,16 +32,43 @@ ui_IP_Address = lv_label_create(ui_WiFi);
 lv_obj_set_width( ui_IP_Address, LV_SIZE_CONTENT);  /// 1
 lv_obj_set_height( ui_IP_Address, LV_SIZE_CONTENT);   /// 1
 lv_obj_set_align( ui_IP_Address, LV_ALIGN_CENTER );
-lv_label_set_text(ui_IP_Address,"192.168.4.1");
+lv_label_set_text(ui_IP_Address,"---.---.-.-");
+lv_obj_set_style_text_color(ui_IP_Address, lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT );
+lv_obj_set_style_text_opa(ui_IP_Address, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
 lv_obj_set_style_text_font(ui_IP_Address, &lv_font_montserrat_38, LV_PART_MAIN| LV_STATE_DEFAULT);
 
 ui_WiFI_Subtitle = lv_label_create(ui_WiFi);
 lv_obj_set_width( ui_WiFI_Subtitle, LV_SIZE_CONTENT);  /// 1
 lv_obj_set_height( ui_WiFI_Subtitle, LV_SIZE_CONTENT);   /// 1
 lv_obj_set_x( ui_WiFI_Subtitle, 0 );
-lv_obj_set_y( ui_WiFI_Subtitle, 40 );
+lv_obj_set_y( ui_WiFI_Subtitle, 35 );
 lv_obj_set_align( ui_WiFI_Subtitle, LV_ALIGN_CENTER );
 lv_label_set_text(ui_WiFI_Subtitle,"Enter IP to any browser");
+lv_obj_set_style_text_color(ui_WiFI_Subtitle, lv_color_hex(0xCDCDCD), LV_PART_MAIN | LV_STATE_DEFAULT );
+lv_obj_set_style_text_opa(ui_WiFI_Subtitle, 255, LV_PART_MAIN| LV_STATE_DEFAULT);
+
+ui_Spinner2 = lv_spinner_create(ui_WiFi,1000,90);
+lv_obj_set_width( ui_Spinner2, 80);
+lv_obj_set_height( ui_Spinner2, 80);
+lv_obj_set_x( ui_Spinner2, 25 );
+lv_obj_set_y( ui_Spinner2, 100 );
+lv_obj_set_align( ui_Spinner2, LV_ALIGN_CENTER );
+lv_obj_clear_flag( ui_Spinner2, LV_OBJ_FLAG_CLICKABLE | LV_OBJ_FLAG_GESTURE_BUBBLE | LV_OBJ_FLAG_SNAPPABLE | LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_SCROLL_ELASTIC | LV_OBJ_FLAG_SCROLL_MOMENTUM | LV_OBJ_FLAG_SCROLL_CHAIN );    /// Flags
+lv_obj_set_style_transform_zoom(ui_Spinner2, 100, LV_PART_MAIN| LV_STATE_DEFAULT);
+
+lv_obj_set_style_arc_color(ui_Spinner2, lv_color_hex(0x22B818), LV_PART_INDICATOR | LV_STATE_DEFAULT );
+lv_obj_set_style_arc_opa(ui_Spinner2, 255, LV_PART_INDICATOR| LV_STATE_DEFAULT);
+
+ui_Image2 = lv_img_create(ui_WiFi);
+lv_img_set_src(ui_Image2, &ui_img_vitalink_logo_circle_png);
+lv_obj_set_width( ui_Image2, LV_SIZE_CONTENT);  /// 60
+lv_obj_set_height( ui_Image2, LV_SIZE_CONTENT);   /// 60
+lv_obj_set_x( ui_Image2, 0 );
+lv_obj_set_y( ui_Image2, -80 );
+lv_obj_set_align( ui_Image2, LV_ALIGN_CENTER );
+lv_obj_add_flag( ui_Image2, LV_OBJ_FLAG_ADV_HITTEST );   /// Flags
+lv_obj_clear_flag( ui_Image2, LV_OBJ_FLAG_SCROLLABLE );    /// Flags
+lv_img_set_zoom(ui_Image2,200);
 
 }
 
@@ -52,5 +81,7 @@ ui_WiFi= NULL;
 ui_Wifi_Title= NULL;
 ui_IP_Address= NULL;
 ui_WiFI_Subtitle= NULL;
+ui_Spinner2= NULL;
+ui_Image2= NULL;
 
 }

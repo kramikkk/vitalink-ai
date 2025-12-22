@@ -65,7 +65,10 @@ def signup(user: SignupRequest, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=500, detail="Failed to create user")
 
-    access_token = create_access_token(data={"sub": str(new_user.id)})
+    access_token_expires = timedelta(minutes=30)
+    access_token = create_access_token(
+        data={"sub": str(new_user.id)}, expires_delta=access_token_expires
+    )
 
     return {"access_token": access_token, "token_type": "bearer", "role": new_user.role}
 
@@ -108,6 +111,20 @@ def get_current_user_profile(current_user: User = Depends(get_current_user)):
         "role": current_user.role,
     }
 
+
+@router.post("/refresh", response_model=Token)
+def refresh_token(current_user: User = Depends(get_current_user)):
+    """
+    Refresh the access token for the current user.
+    Requires valid existing token.
+    """
+    access_token_expires = timedelta(minutes=30)
+    access_token = create_access_token(
+        data={"sub": str(current_user.id)}, expires_delta=access_token_expires
+    )
+
+    return {"access_token": access_token, "token_type": "bearer", "role": current_user.role}
+
 class AdminSignupRequest(BaseModel):
     full_name: str
     username: str
@@ -117,7 +134,7 @@ class AdminSignupRequest(BaseModel):
     confirm_password: str
 
 
-@router.post("/admin/signup", response_model=Token, status_code=status.HTTP_201_CREATED)
+@router.post("/admin/signup", status_code=status.HTTP_201_CREATED)
 def admin_signup(
     user: AdminSignupRequest,
     db: Session = Depends(get_db),
@@ -125,10 +142,11 @@ def admin_signup(
 ):
     """
     Register a new admin user. Only super admins can create admin accounts.
+    Does not return a token - super admin remains logged in.
     """
     if user.password != user.confirm_password:
         raise HTTPException(status_code=400, detail="Passwords do not match")
-    
+
     if len(user.password) < 8:
         raise HTTPException(status_code=400, detail="Password must be at least 8 characters long")
 
@@ -139,7 +157,7 @@ def admin_signup(
     existing_username = db.query(User).filter(User.username == user.username).first()
     if existing_username:
         raise HTTPException(status_code=400, detail="Username already taken")
-    
+
     existing_admin_id = db.query(User).filter(User.admin_id == user.admin_id).first()
     if existing_admin_id:
         raise HTTPException(status_code=400, detail="Admin ID already registered")
@@ -163,9 +181,17 @@ def admin_signup(
         db.rollback()
         raise HTTPException(status_code=500, detail="Failed to create admin user")
 
-    access_token = create_access_token(data={"sub": str(new_admin.id)})
-
-    return {"access_token": access_token, "token_type": "bearer", "role": new_admin.role}
+    return {
+        "message": "Admin user created successfully",
+        "admin": {
+            "id": new_admin.id,
+            "full_name": new_admin.full_name,
+            "username": new_admin.username,
+            "admin_id": new_admin.admin_id,
+            "email": new_admin.email,
+            "role": new_admin.role
+        }
+    }
 
 
 class ProfileUpdate(BaseModel):

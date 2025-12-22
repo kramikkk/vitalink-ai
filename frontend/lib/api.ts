@@ -170,12 +170,24 @@ export const tokenManager = {
   setToken(token: string) {
     if (typeof window !== 'undefined') {
       localStorage.setItem('access_token', token);
+      // Set expiration time (30 minutes from now)
+      const expiresAt = Date.now() + 30 * 60 * 1000;
+      localStorage.setItem('token_expires_at', expiresAt.toString());
     }
   },
 
   getToken(): string | null {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('access_token');
+      const token = localStorage.getItem('access_token');
+      const expiresAt = localStorage.getItem('token_expires_at');
+
+      // Check if token is expired
+      if (token && expiresAt && Date.now() >= parseInt(expiresAt)) {
+        this.removeToken();
+        return null;
+      }
+
+      return token;
     }
     return null;
   },
@@ -198,6 +210,7 @@ export const tokenManager = {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('access_token');
       localStorage.removeItem('user_role');
+      localStorage.removeItem('token_expires_at');
     }
   },
 
@@ -205,7 +218,44 @@ export const tokenManager = {
     return !!this.getToken();
   },
 
-  // Logout helper
+  isTokenExpiringSoon(): boolean {
+    if (typeof window === 'undefined') return false;
+
+    const expiresAt = localStorage.getItem('token_expires_at');
+    if (!expiresAt) return false;
+
+    // Check if token expires in less than 5 minutes
+    const fiveMinutes = 5 * 60 * 1000;
+    return Date.now() >= parseInt(expiresAt) - fiveMinutes;
+  },
+
+  async refreshToken(): Promise<boolean> {
+    const token = this.getToken();
+    if (!token) return false;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        this.setToken(data.access_token);
+        this.setRole(data.role);
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      return false;
+    }
+  },
+
   logout() {
     this.removeToken();
     if (typeof window !== 'undefined') {

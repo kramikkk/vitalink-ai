@@ -17,8 +17,8 @@ def generate_alert_if_needed(db: Session, user_id: int, heart_rate: float, motio
     alerts_to_create = []
 
     # 1. AI Anomaly Detection Alert (covers stress and fatigue detection)
-    if prediction == "ANOMALY":
-        severity = "CRITICAL" if confidence_anomaly >= 80 else "HIGH" if confidence_anomaly >= 60 else "MEDIUM"
+    if prediction == "ANOMALY" and confidence_anomaly >= 60:
+        severity = "CRITICAL" if confidence_anomaly >= 80 else "HIGH"
         alerts_to_create.append({
             "alert_type": "AI_ANOMALY",
             "severity": severity,
@@ -29,8 +29,8 @@ def generate_alert_if_needed(db: Session, user_id: int, heart_rate: float, motio
         })
 
     # 2. High Heart Rate Alert
-    if heart_rate > 120:
-        severity = "CRITICAL" if heart_rate > 150 else "HIGH"
+    if heart_rate > 100:
+        severity = "CRITICAL" if heart_rate > 120 else "HIGH"
         alerts_to_create.append({
             "alert_type": "HIGH_HEART_RATE",
             "severity": severity,
@@ -128,6 +128,27 @@ def mark_alert_read(
         db.commit()
 
     return {"message": "Alert marked as read"}
+
+
+@router.put("/alerts/mark-all-read")
+def mark_all_alerts_read(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Mark all unread alerts as read for the current user.
+    """
+    updated_count = db.query(Alert).filter(
+        Alert.user_id == current_user.id,
+        Alert.is_read == False
+    ).update({
+        "is_read": True,
+        "read_at": datetime.now(timezone.utc)
+    })
+
+    db.commit()
+
+    return {"message": f"Marked {updated_count} alerts as read", "count": updated_count}
 
 
 @router.get("/student/{student_id}/alerts")

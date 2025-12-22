@@ -112,9 +112,25 @@ const AlertCards = ({ student, studentId }: AlertCardsProps) => {
   }
 
   const markAllAsRead = async () => {
-    const unreadAlerts = alerts.filter(a => !a.is_read)
-    for (const alert of unreadAlerts) {
-      await markAsRead(alert.id)
+    try {
+      const token = tokenManager.getToken()
+      if (!token) return
+
+      const response = await fetch(`${API_BASE_URL}/metrics/alerts/mark-all-read`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        // Update all unread alerts to read in local state
+        setAlerts(alerts.map(a => ({ ...a, is_read: true })))
+      } else {
+        console.error("Failed to mark all alerts as read:", response.status)
+      }
+    } catch (error) {
+      console.error("Error marking all alerts as read:", error)
     }
   }
 
@@ -159,6 +175,9 @@ const AlertCards = ({ student, studentId }: AlertCardsProps) => {
             )}
             {alert.stress_level !== undefined && (
               <span>Stress: {Math.round(alert.stress_level)}%</span>
+            )}
+            {alert.anomaly_score !== undefined && (
+              <span>Anomaly Score: {alert.anomaly_score.toFixed(2)}</span>
             )}
           </div>
         )

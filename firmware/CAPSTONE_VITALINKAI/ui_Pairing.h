@@ -17,6 +17,8 @@ extern lv_obj_t *ui_Pairing;
 extern lv_obj_t *ui_Title;
 extern lv_obj_t *ui_Code;
 extern lv_obj_t *ui_Subtitle;
+extern lv_obj_t *ui_Spinner3;
+extern lv_obj_t *ui_Image11;
 // CUSTOM VARIABLES
 
 #ifdef __cplusplus

@@ -38,6 +38,7 @@ extern lv_obj_t *ui____initial_actions0;
 
 // IMAGES AND IMAGE SETS
 LV_IMG_DECLARE( ui_img_vitalink_ai_logo_center_compressed_png);   // assets/VITALINK AI Logo Center Compressed.png
+LV_IMG_DECLARE( ui_img_vitalink_logo_circle_png);   // assets/VitaLink Logo Circle.png
 
 // UI INIT
 void ui_init(void);

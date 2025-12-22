@@ -70,8 +70,8 @@ export default function LogoCloud() {
                             <div className="flex">
                                 <img
                                     className="mx-auto h-8 w-fit dark:invert"
-                                    src="https://cdn.simpleicons.org/prisma/black"
-                                    alt="Prisma Logo"
+                                    src="https://cdn.simpleicons.org/sqlite/black"
+                                    alt="SQLite Logo"
                                     height="32"
                                     width="auto"
                                 />
@@ -80,8 +80,8 @@ export default function LogoCloud() {
                             <div className="flex">
                                 <img
                                     className="mx-auto h-8 w-fit dark:invert"
-                                    src="https://cdn.simpleicons.org/supabase/black"
-                                    alt="Supabase Logo"
+                                    src="https://cdn.simpleicons.org/render/black"
+                                    alt="Render Logo"
                                     height="32"
                                     width="auto"
                                 />

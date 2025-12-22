@@ -52,12 +52,25 @@ export default function FeaturesSection() {
                     <div
                         aria-hidden
                         className="flex flex-col gap-8">
+                        {/* Dark mode alert card */}
                         <Image
-                            src="/AlertCard.png"
+                            src="/VitaLinkAI_Alert_Dark.png"
                             alt="Automated Health Alerts"
                             width={500}
                             height={200}
-                            className="rounded-md"
+                            className="rounded-md hidden dark:block"
+                            style={{
+                                maskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)',
+                                WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)'
+                            }}
+                        />
+                        {/* Light mode alert card */}
+                        <Image
+                            src="/VitaLinkAI_Alert_Light.png"
+                            alt="Automated Health Alerts"
+                            width={500}
+                            height={200}
+                            className="rounded-md dark:hidden"
                             style={{
                                 maskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)',
                                 WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)'

@@ -8,6 +8,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +40,7 @@ export function PairDeviceDialog({ open, onOpenChange }: PairDeviceDialogProps) 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [pairedDevice, setPairedDevice] = useState<{ device_id: string; paired_at: string } | null>(null);
+  const [showUnpairConfirm, setShowUnpairConfirm] = useState(false);
 
   // Detect backend URL automatically
   useEffect(() => {
@@ -127,6 +138,7 @@ export function PairDeviceDialog({ open, onOpenChange }: PairDeviceDialogProps) 
   };
 
   const handleUnpair = async () => {
+    setShowUnpairConfirm(false);
     setLoading(true);
     setError("");
 
@@ -160,9 +172,11 @@ export function PairDeviceDialog({ open, onOpenChange }: PairDeviceDialogProps) 
     }
   };
 
-  const handleClose = () => {
+  const handleClose = async () => {
     if (step === "success") {
-      onOpenChange(false);
+      // After successful pairing, refresh to show paired UI
+      await checkExistingDevice(backendUrl);
+      // Dialog stays open to show "paired" state
     } else {
       onOpenChange(false);
     }
@@ -200,9 +214,9 @@ export function PairDeviceDialog({ open, onOpenChange }: PairDeviceDialogProps) 
                 <p className="text-sm text-muted-foreground">
                   Your account is currently linked to this VitalinkAI device. To pair a different device, you must first unpair this one.
                 </p>
-                
+
                 <Button
-                  onClick={handleUnpair}
+                  onClick={() => setShowUnpairConfirm(true)}
                   disabled={loading}
                   variant="destructive"
                   className="w-full h-11"
@@ -329,6 +343,26 @@ export function PairDeviceDialog({ open, onOpenChange }: PairDeviceDialogProps) 
           )}
         </div>
       </DialogContent>
+
+      <AlertDialog open={showUnpairConfirm} onOpenChange={setShowUnpairConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unpair Device?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to unpair your VitalinkAI device? This will stop health data collection and you will need to pair it again to resume tracking.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleUnpair}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Unpair Device
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

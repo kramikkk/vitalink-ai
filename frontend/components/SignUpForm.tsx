@@ -16,6 +16,7 @@ import Image from "next/image"
 import { useState, FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import { authApi, tokenManager, UserRole } from "@/lib/api"
+import { validateSignupForm } from "@/lib/validation"
 import { Loader2, Eye, EyeOff } from "lucide-react"
 
 export function SignUpForm({
@@ -47,14 +48,12 @@ export function SignUpForm({
     e.preventDefault()
     setError('')
 
-    // Validation
-    if (formData.password !== formData.confirm_password) {
-      setError('Passwords do not match')
-      return
-    }
-
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long')
+    // Client-side validation
+    const validation = validateSignupForm(formData)
+    if (!validation.valid) {
+      // Show first error
+      const firstError = Object.values(validation.errors)[0]
+      setError(firstError)
       return
     }
 

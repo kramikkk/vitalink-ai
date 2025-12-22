@@ -16,6 +16,7 @@ import Image from "next/image"
 import { useState, FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import { authApi, tokenManager, UserRole } from "@/lib/api"
+import { validateLoginForm } from "@/lib/validation"
 import { Loader2, Eye, EyeOff } from "lucide-react"
 
 export function LoginForm({
@@ -32,6 +33,15 @@ export function LoginForm({
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError('')
+
+    // Client-side validation
+    const validation = validateLoginForm({ email, password })
+    if (!validation.valid) {
+      const firstError = Object.values(validation.errors)[0]
+      setError(firstError)
+      return
+    }
+
     setIsLoading(true)
 
     try {

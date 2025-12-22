@@ -50,7 +50,8 @@ interface AlertCardsProps {
 const AlertCards = ({ student, studentId }: AlertCardsProps) => {
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<"unread" | "all">("unread")
+  const [readFilter, setReadFilter] = useState<"unread" | "all">("unread")
+  const [typeFilter, setTypeFilter] = useState<"all" | "HIGH_HEART_RATE" | "HIGH_ACTIVITY" | "AI_ANOMALY">("all")
   const isAdmin = !!studentId // If studentId is provided, this is admin view
 
   useEffect(() => {
@@ -135,9 +136,16 @@ const AlertCards = ({ student, studentId }: AlertCardsProps) => {
   }
 
   // Filter alerts based on selection
-  const filteredAlerts = filter === "unread"
-    ? alerts.filter(a => !a.is_read)
-    : alerts
+  const filteredAlerts = alerts
+    .filter(a => {
+      // Filter by read status
+      if (readFilter === "unread" && a.is_read) return false
+
+      // Filter by alert type
+      if (typeFilter !== "all" && a.alert_type !== typeFilter) return false
+
+      return true
+    })
 
   const unreadCount = alerts.filter(a => !a.is_read).length
 
@@ -231,21 +239,33 @@ const AlertCards = ({ student, studentId }: AlertCardsProps) => {
         <CardHeader>
           <div className="flex items-center justify-between gap-2 mb-2">
             <CardTitle className="flex items-center gap-2">
-              AI-Driven Alerts
+            <TriangleAlert className="size-5 text-yellow-500" /> {/* Added icon here */}
+              Alerts
               {unreadCount > 0 && (
                 <Badge variant="destructive" className="ml-2">
                   {unreadCount}
                 </Badge>
               )}
             </CardTitle>
-            <div className="flex items-center gap-2">
-              <Select value={filter} onValueChange={(value: "unread" | "all") => setFilter(value)}>
-                <SelectTrigger className="w-[140px] h-8 text-xs">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Select value={typeFilter} onValueChange={(value: "all" | "HIGH_HEART_RATE" | "HIGH_ACTIVITY" | "AI_ANOMALY") => setTypeFilter(value)}>
+                <SelectTrigger className="w-[110px] h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="unread">Unread Only</SelectItem>
-                  <SelectItem value="all">All Alerts</SelectItem>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="HIGH_HEART_RATE">Heart Rate</SelectItem>
+                  <SelectItem value="HIGH_ACTIVITY">Activity</SelectItem>
+                  <SelectItem value="AI_ANOMALY">Anomaly</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={readFilter} onValueChange={(value: "unread" | "all") => setReadFilter(value)}>
+                <SelectTrigger className="w-[90px] h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unread">Unread</SelectItem>
+                  <SelectItem value="all">History</SelectItem>
                 </SelectContent>
               </Select>
               {!isAdmin && unreadCount > 0 && (
@@ -255,7 +275,7 @@ const AlertCards = ({ student, studentId }: AlertCardsProps) => {
                   className="h-8 text-xs"
                   onClick={markAllAsRead}
                 >
-                  Mark All as Read
+                  <Check className="h-4 w-4 mr-1" />
                 </Button>
               )}
             </div>
@@ -273,11 +293,15 @@ const AlertCards = ({ student, studentId }: AlertCardsProps) => {
                   <EmptyMedia variant="icon">
                     <TriangleAlert className="text-green-500" />
                   </EmptyMedia>
-                  <EmptyTitle>{filter === "unread" ? "All Read!" : "All Clear!"}</EmptyTitle>
+                  <EmptyTitle>
+                    {readFilter === "unread" && typeFilter === "all" ? "All Read!" : "No Alerts"}
+                  </EmptyTitle>
                   <EmptyDescription>
-                    {filter === "unread"
+                    {readFilter === "unread" && typeFilter === "all"
                       ? "No unread alerts. You're all caught up!"
-                      : "No abnormalities detected. Your health metrics are normal."}
+                      : typeFilter !== "all"
+                      ? `No ${typeFilter === "HIGH_HEART_RATE" ? "heart rate" : typeFilter === "HIGH_ACTIVITY" ? "activity" : "anomaly"} alerts found.`
+                      : "No alerts found matching your filters."}
                   </EmptyDescription>
                 </EmptyHeader>
               </Empty>
@@ -302,10 +326,9 @@ const AlertCards = ({ student, studentId }: AlertCardsProps) => {
                         onClick={() => markAsRead(alert.id)}
                       >
                         <Check className="h-3 w-3 mr-1" />
-                        Mark Read
                       </Button>
                     )}
-                    <div className={cn("flex items-start gap-2", !isAdmin && !alert.is_read ? "pr-24" : "pr-2")}>
+                    <div className={cn("flex items-start gap-2 pr-2")}>
                       <div className="mt-0.5">
                         {getAlertIcon(alert.alert_type)}
                       </div>

@@ -54,33 +54,33 @@ export function UserCards({
     return "Normal"
   }
 
-  // Activity Level: Low (<40), Normal (40-70), High (>70)
+  // Activity Level: Low (<60), Normal (60-80), High (>80)
   const getActivityColor = (value: number) => {
     if (value === 0) return "text-muted-foreground"
-    if (value < 40) return "text-green-500"
-    if (value > 70) return "text-red-500"
+    if (value < 60) return "text-green-500"
+    if (value > 80) return "text-red-500"
     return "text-yellow-500"
   }
   
   const getActivityStatus = (value: number) => {
     if (value === 0) return "No Data"
-    if (value < 40) return "Low"
-    if (value > 70) return "High"
+    if (value < 60) return "Low"
+    if (value > 80) return "High"
     return "Moderate"
   }
 
-  // Stress Level: Low (<30), Normal (30-60), High (>60)
+  // Stress Level: Low (<60), Normal (60-80), High (>80)
   const getStressColor = (value: number) => {
     if (value === 0) return "text-muted-foreground"
-    if (value < 30) return "text-green-500"
-    if (value > 60) return "text-red-500"
+    if (value < 60) return "text-green-500"
+    if (value > 80) return "text-red-500"
     return "text-yellow-500"
   }
   
   const getStressStatus = (value: number) => {
     if (value === 0) return "No Data"
-    if (value < 30) return "Low"
-    if (value > 60) return "High"
+    if (value < 60) return "Low"
+    if (value > 80) return "High"
     return "Moderate"
   }
 

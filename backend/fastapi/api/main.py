@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
-from routers import metrics, auth, devices, alerts
+from routers import metrics, auth, devices, alerts, websocket
 from database import Base, engine
 import os
 from dotenv import load_dotenv
@@ -55,6 +55,7 @@ app.include_router(metrics.router)
 app.include_router(auth.router, prefix="/auth")
 app.include_router(devices.router)
 app.include_router(alerts.router)
+app.include_router(websocket.router)  # WebSocket endpoint
 
 
 

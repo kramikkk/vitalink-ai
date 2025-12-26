@@ -54,6 +54,19 @@ def generate_training_data(min_samples=100):
             (df["motion_intensity"] >= 0) & (df["motion_intensity"] <= 100)  # Valid motion range
         ]
 
+        # CRITICAL: Filter to ONLY normal, healthy data for training
+        # Isolation Forest learns "normal" patterns, then flags everything else as anomaly
+        # Training on anomalies will confuse the model!
+        df = df[
+            (df["heart_rate"] >= 60) & (df["heart_rate"] <= 100) &  # Normal HR range
+            (df["motion_intensity"] >= 0) & (df["motion_intensity"] <= 60)  # Normal motion (not vigorous exercise)
+        ]
+
+        print(f"\n✓ Filtered to normal data only:")
+        print(f"  - Heart Rate: 60-100 BPM")
+        print(f"  - Motion: 0-60%")
+        print(f"  - Samples after filtering: {len(df)}")
+
         if len(df) < 10:
             raise ValueError(f"After filtering, only {len(df)} valid samples remain. Need at least 10.")
 

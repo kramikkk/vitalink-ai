@@ -2,76 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func, text
 from database import get_db, engine
-from models_db import User, Metrics, Device
+from models_db import User, Metrics
 from utils.auth_utils import get_current_user
 from datetime import datetime, timedelta, timezone
-from pydantic import BaseModel
-from ai_model.model import predict
-from routers.alerts import generate_alert_if_needed
 
 router = APIRouter(prefix="/metrics", tags=["Metrics"])
 
-
-# Pydantic model for sensor data from ESP32
-class SensorDataRequest(BaseModel):
-    device_id: str
-    heart_rate: float
-    motion_intensity: float
-
-@router.post("/sensor-data")
-def receive_sensor_data(data: SensorDataRequest, db: Session = Depends(get_db)):
-    """
-    ESP32 sends sensor data (BPM and motion intensity) to this endpoint.
-    The device must be paired to a user.
-    """
-    # Find the device and verify it's paired
-    device = db.query(Device).filter(Device.device_id == data.device_id).first()
-    
-    if not device:
-        raise HTTPException(status_code=404, detail="Device not found")
-    
-    if not device.paired or device.user_id is None:
-        raise HTTPException(status_code=403, detail="Device not paired to any user")
-
-    # Run AI prediction on incoming sensor data
-    prediction_result = predict(data.heart_rate, data.motion_intensity)
-
-    # Create new metrics entry with AI predictions
-    new_metric = Metrics(
-        user_id=device.user_id,
-        heart_rate=data.heart_rate,
-        motion_intensity=data.motion_intensity,
-        prediction=prediction_result["prediction"],
-        anomaly_score=prediction_result["anomaly_score"],
-        confidence_normal=prediction_result["confidence_normal"],
-        confidence_anomaly=prediction_result["confidence_anomaly"],
-        timestamp=datetime.now(timezone.utc)
-    )
-
-    db.add(new_metric)
-    db.commit()
-    db.refresh(new_metric)
-
-    # Generate AI-driven alerts if abnormal readings detected
-    generate_alert_if_needed(
-        db=db,
-        user_id=device.user_id,
-        heart_rate=data.heart_rate,
-        motion_intensity=data.motion_intensity,
-        prediction=prediction_result["prediction"],
-        anomaly_score=prediction_result["anomaly_score"],
-        confidence_anomaly=prediction_result["confidence_anomaly"],
-        timestamp=new_metric.timestamp
-    )
-
-    return {
-        "message": "Sensor data received",
-        "metric_id": new_metric.id,
-        "user_id": device.user_id,
-        "prediction": prediction_result["prediction"],
-        "anomaly_score": prediction_result["anomaly_score"],
-        "confidence_anomaly": prediction_result["confidence_anomaly"]
-    }
+# NOTE: Sensor data is now received via WebSocket (/ws/sensors)
+# The old HTTP POST /metrics/sensor-data endpoint has been removed
 
 @router.get("/latest")
 def get_latest_metrics(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):

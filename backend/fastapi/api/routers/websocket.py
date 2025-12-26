@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from database import SessionLocal
 from models_db import Device, Metrics
 from datetime import datetime, timezone, timedelta
+from routers.alerts import generate_alert_if_needed
 import json
 import logging
 
@@ -97,6 +98,18 @@ async def websocket_sensor_endpoint(websocket: WebSocket):
                     db.refresh(new_metric)
 
                     logger.info(f"✓ Saved metric {new_metric.id} for user {device.user_id}")
+
+                    # Generate AI-driven alerts if abnormal readings detected
+                    generate_alert_if_needed(
+                        db=db,
+                        user_id=device.user_id,
+                        heart_rate=heart_rate,
+                        motion_intensity=motion_intensity,
+                        prediction=result["prediction"],
+                        anomaly_score=result["anomaly_score"],
+                        confidence_anomaly=result["confidence_anomaly"],
+                        timestamp=new_metric.timestamp
+                    )
 
                     # Send response back to device
                     response = {

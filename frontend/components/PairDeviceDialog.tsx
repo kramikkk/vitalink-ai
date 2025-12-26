@@ -45,9 +45,7 @@ export function PairDeviceDialog({ open, onOpenChange }: PairDeviceDialogProps) 
   // Detect backend URL automatically
   useEffect(() => {
     if (open) {
-      const protocol = window.location.protocol;
-      const hostname = window.location.hostname;
-      const detectedBackend = `${protocol}//${hostname}:8000`;
+      const detectedBackend = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
       setBackendUrl(detectedBackend);
       checkExistingDevice(detectedBackend);
     }

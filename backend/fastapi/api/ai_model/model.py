@@ -31,9 +31,11 @@ def train_model():
     X_scaled = scaler.fit_transform(X)
 
     # Train Isolation Forest
+    # Lower contamination to 0.01 since our training data is all normal
+    # This makes the model more lenient and gives lower stress scores for normal data
     model = IsolationForest(
         n_estimators=200,
-        contamination=0.05,
+        contamination=0.01,  # Changed from 0.05 - expect only 1% outliers in clean training data
         random_state=42
     )
     model.fit(X_scaled)
@@ -97,9 +99,14 @@ def predict(heart_rate: float, motion_intensity: float):
 
         # Convert anomaly score to confidence percentages (0-100)
         # Isolation Forest: positive score = normal, negative score = anomaly
-        # Score range is roughly -0.5 (high anomaly) to +0.5 (very normal)
-        # Map: +0.5 -> 0% stress, -0.5 -> 100% stress
-        confidence_anomaly = max(0, min(100, (0.5 - score) * 100))
+        # Our model's actual range is roughly +0.15 (very normal) to -0.05 (anomaly)
+        # Map: +0.15 -> 0% stress, -0.05 -> 100% stress
+        # Using wider range for better sensitivity: +0.2 to -0.1
+        min_score = -0.1  # High anomaly = 100% stress
+        max_score = 0.2   # Very normal = 0% stress
+
+        # Normalize score to 0-100 range (inverted: higher score = lower stress)
+        confidence_anomaly = max(0, min(100, ((max_score - score) / (max_score - min_score)) * 100))
         confidence_normal = 100 - confidence_anomaly
 
         return {

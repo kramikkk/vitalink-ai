@@ -13,6 +13,7 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <Preferences.h>
+#include <WebSocketsClient.h>
 
 /* ===================== WIFI ===================== */
 Preferences prefs;
@@ -30,14 +31,21 @@ unsigned long lastWiFiRetry = 0;
 String pairingCode = "";
 String deviceId = "";
 unsigned long lastPairingCheck = 0;
-const unsigned long PAIRING_CHECK_INTERVAL = 1000;  // Check every 1 second when not paired
-const unsigned long PAIRED_CHECK_INTERVAL = 1000;   // Check every 1 second when paired
+const unsigned long PAIRING_CHECK_INTERVAL = 3000;   // Check every 3 seconds when not paired
+const unsigned long PAIRED_CHECK_INTERVAL = 30000;  // Check every 30 seconds when paired (reduce blocking!)
 
 /* ===================== SENSOR DATA TRANSMISSION ===================== */
 unsigned long lastDataSend = 0;
 const unsigned long DATA_SEND_INTERVAL = 1000;  // Send data every 1 second
 
 const char* BACKEND_URL = "https://vitalink-ai-backend.onrender.com";
+
+/* ===================== WEBSOCKET CONFIGURATION ===================== */
+WebSocketsClient webSocket;
+bool wsConnected = false;
+const char* WS_HOST = "vitalink-ai-backend.onrender.com";
+const int WS_PORT = 443;  // HTTPS port
+const char* WS_PATH = "/ws/sensors";  // WebSocket endpoint
 
 /*--------------------------------- GC9A01 DISPLAY ---------------------------------*/
 static const uint16_t screenWidth  = 240;
@@ -460,6 +468,70 @@ bool checkPairingStatus() {
 
 int stressLevel = 0;  // Global variable to store stress level from backend
 
+/* ===================== WEBSOCKET FUNCTIONS ===================== */
+
+void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
+    switch(type) {
+        case WStype_DISCONNECTED:
+            Serial.println("WebSocket Disconnected");
+            wsConnected = false;
+            break;
+        case WStype_CONNECTED:
+            Serial.printf("WebSocket Connected to: %s\n", payload);
+            wsConnected = true;
+            break;
+        case WStype_TEXT:
+            Serial.printf("WebSocket message received: %s\n", payload);
+            // Parse stress_level from JSON response
+            String message = String((char*)payload);
+            int stressIdx = message.indexOf("\"stress_level\":");
+            if (stressIdx != -1) {
+                int colonIdx = message.indexOf(":", stressIdx);
+                int endIdx = message.indexOf(",", colonIdx);
+                if (endIdx == -1) endIdx = message.indexOf("}", colonIdx);
+
+                String stressStr = message.substring(colonIdx + 1, endIdx);
+                stressLevel = stressStr.toInt();
+
+                Serial.printf("✓ WebSocket: Stress=%d%%\n", stressLevel);
+
+                // Update UI
+                if (ui_STRESS) lv_arc_set_value(ui_STRESS, stressLevel);
+                if (ui_STRESS_VALUE && stressLevel > 0) {
+                    lv_label_set_text_fmt(ui_STRESS_VALUE, "%d", stressLevel);
+                }
+            }
+            break;
+    }
+}
+
+void connectWebSocket() {
+    if (!WiFi.isConnected()) return;
+
+    Serial.printf("Connecting to WebSocket: wss://%s:%d%s\n", WS_HOST, WS_PORT, WS_PATH);
+
+    // Configure WebSocket with SSL
+    webSocket.beginSSL(WS_HOST, WS_PORT, WS_PATH);
+    webSocket.onEvent(webSocketEvent);
+    webSocket.setReconnectInterval(5000);  // Reconnect every 5 seconds if disconnected
+}
+
+void sendSensorDataWebSocket(int heartRate, int motionIntensity) {
+    if (!wsConnected) {
+        Serial.println("WebSocket not connected, skipping send");
+        return;
+    }
+
+    String payload = "{";
+    payload += "\"device_id\":\"" + deviceId + "\",";
+    payload += "\"heart_rate\":" + String(heartRate) + ",";
+    payload += "\"motion_intensity\":" + String(motionIntensity);
+    payload += "}";
+
+    webSocket.sendTXT(payload);
+    Serial.printf("✓ WebSocket send: HR=%d Motion=%d\n", heartRate, motionIntensity);
+}
+
 void sendSensorData(int heartRate, int motionIntensity) {
     if (WiFi.status() != WL_CONNECTED) return;
 
@@ -670,6 +742,11 @@ void setup()
     }
     
     connectWiFi();
+
+    // Connect WebSocket after WiFi is connected
+    if (WiFi.status() == WL_CONNECTED) {
+        connectWebSocket();
+    }
 }
 
 /*--------------------------------- LOOP ---------------------------------*/
@@ -799,6 +876,9 @@ void loop()
     if (!wifiConnected) {
         return;
     }
+
+    /* WEBSOCKET LOOP - non-blocking! Takes only ~1-5ms */
+    webSocket.loop();
     
 /* ================= PAIRING CHECK ================= */
 bool devicePaired = prefs.getBool("paired", false);
@@ -963,7 +1043,7 @@ if (millis() - lastMPUread >= MPU_INTERVAL) {
         lv_label_set_text_fmt(ui_ACTIVITY_VALUE, "%d", intensity);
 }
     
-    /* SEND SENSOR DATA TO BACKEND */
+    /* SEND SENSOR DATA TO BACKEND VIA WEBSOCKET */
     if (millis() - lastDataSend >= DATA_SEND_INTERVAL) {
         lastDataSend = millis();
 
@@ -973,7 +1053,7 @@ if (millis() - lastMPUread >= MPU_INTERVAL) {
         // This prevents sending gradually increasing HR values during initial detection
         int hrToSend = (ratesFilled >= RATE_SIZE) ? beatAvg : 0;
 
-        sendSensorData(hrToSend, currentIntensity);
+        sendSensorDataWebSocket(hrToSend, currentIntensity);  // Use WebSocket instead of HTTP
 
         // Debug output
         Serial.printf("Sending: HR=%d, Motion=%d (ratesFilled=%d/%d)\n",

@@ -37,7 +37,7 @@ const unsigned long PAIRED_CHECK_INTERVAL = 1000;   // Check every 1 second when
 unsigned long lastDataSend = 0;
 const unsigned long DATA_SEND_INTERVAL = 1000;  // Send data every 1 second
 
-const char* BACKEND_URL = "http://192.168.1.6:8000";
+const char* BACKEND_URL = "http://192.168.1.8:8000";
 
 /*--------------------------------- GC9A01 DISPLAY ---------------------------------*/
 static const uint16_t screenWidth  = 240;

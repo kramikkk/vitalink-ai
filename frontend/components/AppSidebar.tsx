@@ -1,5 +1,3 @@
-import { Calendar, Heart, Home, Settings, TrendingUp } from "lucide-react"
-
 import {
   Sidebar,
   SidebarContent,
@@ -16,15 +14,6 @@ import Link from "next/link"
 import Image from "next/image"
 import { NavUser } from "./NavUser"
 import { studentMenu, teacherMenu } from "@/lib/menu";
-
-
-const data = {
-  user: {
-    name: "Mark Jeric Exconde",
-    email: "0322-3614@lspu.edu.ph",
-    avatar: "/avatars/shadcn.jpg",
-  },
-}
 
 export function AppSidebar({ role }: { role: "student" | "teacher" }) {
   const menu = role === "teacher" ? teacherMenu : studentMenu;
@@ -65,7 +54,7 @@ export function AppSidebar({ role }: { role: "student" | "teacher" }) {
                 </SidebarGroup>
             </SidebarContent>
         <SidebarFooter>
-            <NavUser user={data.user} />
+            <NavUser />
         </SidebarFooter>
     </Sidebar>
   )

@@ -56,14 +56,12 @@ export function UserCards({
 
   // Activity Level: Low (<60), Normal (60-80), High (>80)
   const getActivityColor = (value: number) => {
-    if (value === 0) return "text-muted-foreground"
     if (value < 60) return "text-green-500"
     if (value > 80) return "text-red-500"
     return "text-yellow-500"
   }
-  
+
   const getActivityStatus = (value: number) => {
-    if (value === 0) return "No Data"
     if (value < 60) return "Low"
     if (value > 80) return "High"
     return "Moderate"

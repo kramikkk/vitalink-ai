@@ -953,9 +953,15 @@ if (millis() - lastPairingCheck >= checkInterval) {
             settlingDone = false;
             beatAvg = 0;
             ratesFilled = 0;  // Reset counter when finger is removed
+            stressLevel = 0;  // Reset stress level when no finger
 
             if (ui_HEART) lv_arc_set_value(ui_HEART, 0);
-            if (ui_BPM_VALUE) lv_label_set_text(ui_BPM_VALUE, "--");
+            if (ui_BPM_VALUE) lv_label_set_text(ui_BPM_VALUE, "---");
+
+            // Reset stress display
+            if (ui_STRESS) lv_arc_set_value(ui_STRESS, 0);
+            if (ui_STRESS_VALUE) lv_label_set_text(ui_STRESS_VALUE, "---");
+
             return;
         }
 
@@ -966,6 +972,7 @@ if (millis() - lastPairingCheck >= checkInterval) {
             memset(rates, 0, sizeof(rates));
             ratesFilled = 0;  // Reset counter when finger is first placed
             if (ui_BPM_VALUE) lv_label_set_text(ui_BPM_VALUE, "...");
+            if (ui_STRESS_VALUE) lv_label_set_text(ui_STRESS_VALUE, "...");
             return;
         }
 
@@ -988,15 +995,16 @@ if (millis() - lastPairingCheck >= checkInterval) {
         }
 
         // Update display immediately when ratesFilled >= RATE_SIZE
-        // Show "--" or value directly, no settling time needed for display
+        // Show "..." while settling, then actual values when ready
         if (ratesFilled >= RATE_SIZE) {
             settlingDone = true;
             if (ui_HEART) lv_arc_set_value(ui_HEART, beatAvg);
             if (ui_BPM_VALUE) lv_label_set_text_fmt(ui_BPM_VALUE, "%d", beatAvg);
         } else {
-            // Still filling up the rates array, show "--"
+            // Still filling up the rates array, show "..." (finger detected but settling)
             if (ui_HEART) lv_arc_set_value(ui_HEART, 0);
-            if (ui_BPM_VALUE) lv_label_set_text(ui_BPM_VALUE, "--");
+            if (ui_BPM_VALUE) lv_label_set_text(ui_BPM_VALUE, "...");
+            if (ui_STRESS_VALUE) lv_label_set_text(ui_STRESS_VALUE, "...");
         }
     }
 
@@ -1052,6 +1060,12 @@ if (millis() - lastMPUread >= MPU_INTERVAL) {
         // Only send valid heart rate if all rate slots are filled (stable reading)
         // This prevents sending gradually increasing HR values during initial detection
         int hrToSend = (ratesFilled >= RATE_SIZE) ? beatAvg : 0;
+
+        // Don't send if no valid heart rate (no finger detected)
+        if (hrToSend == 0) {
+            Serial.println("No valid heart rate, skipping send");
+            return;
+        }
 
         sendSensorDataWebSocket(hrToSend, currentIntensity);  // Use WebSocket instead of HTTP
 

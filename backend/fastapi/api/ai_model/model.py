@@ -86,8 +86,8 @@ def predict(heart_rate: float, motion_intensity: float):
         model = joblib.load(MODEL_PATH)
         scaler = joblib.load(SCALER_PATH)
 
-        # Prepare data
-        data = np.array([[heart_rate, motion_intensity]])
+        # Prepare data with feature names to match training data
+        data = pd.DataFrame([[heart_rate, motion_intensity]], columns=["heart_rate", "motion_intensity"])
         scaled = scaler.transform(data)
 
         # Make prediction

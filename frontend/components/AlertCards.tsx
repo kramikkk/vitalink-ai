@@ -366,14 +366,12 @@ const AlertCards = ({ student, studentId, isStale = false }: AlertCardsProps) =>
             </ScrollArea>
           )}
         </CardContent>
-        {filteredAlerts.length === 0 && (
-          <div className="absolute bottom-10 right-0 pointer-events-none">
-            <TriangleAlert
-              className="size-[350px] lg:size-[600px] text-red-300 opacity-20 translate-x-1/3 translate-y-1/3"
-              strokeWidth={1}
-            />
-          </div>
-        )}
+        <div className="absolute bottom-10 right-0 pointer-events-none">
+          <TriangleAlert
+            className="size-[350px] lg:size-[500px] text-red-300 opacity-20 translate-x-1/3 translate-y-1/3"
+            strokeWidth={1}
+          />
+        </div>
       </Card>
     </div>
   )

@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { metricsApi, tokenManager } from "@/lib/api"
+import { ChartFilters } from "@/components/ChartFilters"
 
 export const description = "An interactive area chart"
 
@@ -52,16 +53,12 @@ interface Student {
 }
 
 interface AppAreaChartProps {
-  selectedMetric?: "All" | "HeartRate" | "ActivityLevel" | "StressLevel"
-  timeRange?: string
   student?: Student
   studentId?: number  // For admin mode - if provided, fetch data for this student
   isStale?: boolean
 }
 
 export function AppAreaChart({
-  selectedMetric = "All",
-  timeRange = "live",
   student,
   studentId,  // Admin mode: fetch data for specific student
   isStale = false
@@ -69,8 +66,12 @@ export function AppAreaChart({
   const [chartData, setChartData] = React.useState<Array<{date: string, HeartRate: number, ActivityLevel: number, StressLevel: number}>>([])
   const [loading, setLoading] = React.useState(true)
   const prevIsStaleRef = React.useRef(isStale)
-  const prevTimeRangeRef = React.useRef(timeRange)
+  const prevTimeRangeRef = React.useRef("live")
   const [pendingTimeRange, setPendingTimeRange] = React.useState<string | null>(null)
+
+  // Internal state for filters
+  const [selectedMetric, setSelectedMetric] = React.useState<"All" | "HeartRate" | "ActivityLevel" | "StressLevel">("All")
+  const [timeRange, setTimeRange] = React.useState("live")
 
   // Track time range changes and mark as pending until new data arrives
   React.useEffect(() => {
@@ -535,10 +536,23 @@ export function AppAreaChart({
   return (
     <Card className={`h-full flex flex-col ${isStale ? 'opacity-60' : ''}`}>
       <CardHeader className="flex-shrink-0 border-b">
-        <CardTitle>Wellness Trend Chart</CardTitle>
-        <CardDescription>
-          {loading ? "Loading data..." : isStale ? "Showing historical data (device offline)" : `Showing ${processedData.length} data points`}
-        </CardDescription>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="flex-1">
+            <CardTitle>Wellness Trend Chart</CardTitle>
+            <CardDescription>
+              {loading ? "Loading data..." : isStale ? "Showing historical data (device offline)" : `Showing ${processedData.length} data points`}
+            </CardDescription>
+          </div>
+          <div className="flex-shrink-0">
+            <ChartFilters
+              selectedMetric={selectedMetric}
+              timeRange={timeRange}
+              onMetricChange={setSelectedMetric}
+              onTimeRangeChange={setTimeRange}
+              isStale={isStale}
+            />
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="flex-1 px-2 pt-4 sm:px-6 sm:pt-6 min-h-0">
         {(loading || pendingTimeRange) ? (

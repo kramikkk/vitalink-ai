@@ -4,6 +4,7 @@ from database import SessionLocal
 from models_db import Device, Metrics
 from datetime import datetime, timezone, timedelta
 from routers.alerts import generate_alert_if_needed
+from ai_model.model import predict
 import json
 import logging
 
@@ -12,37 +13,6 @@ logger = logging.getLogger(__name__)
 
 # Philippine timezone (UTC+8)
 PH_TZ = timezone(timedelta(hours=8))
-
-
-def calculate_stress_level(heart_rate: int, motion_intensity: int) -> dict:
-    """
-    Calculate stress level from heart rate and motion intensity.
-    Same logic as the original HTTP endpoint.
-    """
-    prediction = "NORMAL"
-    confidence_anomaly = 0.0
-
-    if heart_rate > 0:
-        if heart_rate > 100 and motion_intensity < 30:
-            # High heart rate while resting = potential stress
-            prediction = "ANOMALY"
-            confidence_anomaly = min(((heart_rate - 100) / 50.0) * 100, 100)
-        elif heart_rate > 120:
-            prediction = "ANOMALY"
-            confidence_anomaly = min(((heart_rate - 120) / 30.0) * 100, 100)
-        else:
-            confidence_anomaly = max(0, ((heart_rate - 60) / 40.0) * 30)
-
-    confidence_normal = 100 - confidence_anomaly
-    anomaly_score = confidence_anomaly / 100.0
-
-    return {
-        "prediction": prediction,
-        "anomaly_score": anomaly_score,
-        "confidence_normal": confidence_normal,
-        "confidence_anomaly": confidence_anomaly,
-        "stress_level": int(confidence_anomaly)
-    }
 
 
 @router.websocket("/ws/sensors")
@@ -79,8 +49,8 @@ async def websocket_sensor_endpoint(websocket: WebSocket):
                         }))
                         continue
 
-                    # Calculate stress level
-                    result = calculate_stress_level(heart_rate, motion_intensity)
+                    # Run AI prediction on incoming sensor data (same as HTTP endpoint)
+                    result = predict(heart_rate, motion_intensity)
 
                     # Save to database
                     new_metric = Metrics(
@@ -116,13 +86,13 @@ async def websocket_sensor_endpoint(websocket: WebSocket):
                         "status": "success",
                         "metric_id": new_metric.id,
                         "prediction": result["prediction"],
-                        "stress_level": result["stress_level"],
+                        "stress_level": int(result["confidence_anomaly"]),  # Stress level is confidence_anomaly as integer
                         "anomaly_score": result["anomaly_score"],
                         "confidence_anomaly": result["confidence_anomaly"]
                     }
 
                     await websocket.send_text(json.dumps(response))
-                    logger.info(f"✓ Sent response: Stress={result['stress_level']}%")
+                    logger.info(f"✓ Sent response: Stress={int(result['confidence_anomaly'])}%")
 
                 except Exception as e:
                     logger.error(f"Error processing WebSocket message: {str(e)}")

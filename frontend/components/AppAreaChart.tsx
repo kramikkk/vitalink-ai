@@ -91,7 +91,7 @@ export function AppAreaChart({
 
   // Fetch data from backend based on time range
   React.useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = async (isRefresh = false) => {
       const token = tokenManager.getToken()
       if (!token) {
         setLoading(false)
@@ -99,7 +99,10 @@ export function AppAreaChart({
       }
 
       try {
-        setLoading(true)
+        // Only show loading spinner on initial fetch, not on auto-refresh
+        if (!isRefresh) {
+          setLoading(true)
+        }
         const now = new Date()
         let startTime: Date
         let metrics;
@@ -215,7 +218,7 @@ export function AppAreaChart({
 
     // Auto-refresh for live mode (only if device is online)
     if (timeRange === "live" && !isStale) {
-      const interval = setInterval(fetchData, 1000) // Refresh every second for live data
+      const interval = setInterval(() => fetchData(true), 1000) // Refresh every second for live data
       return () => clearInterval(interval)
     }
   }, [timeRange, studentId, isStale])

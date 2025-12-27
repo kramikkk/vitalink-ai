@@ -743,10 +743,7 @@ void setup()
     
     connectWiFi();
 
-    // Connect WebSocket after WiFi is connected
-    if (WiFi.status() == WL_CONNECTED) {
-        connectWebSocket();
-    }
+    // Note: WebSocket connection is initiated in loop() after WiFi actually connects
 }
 
 /*--------------------------------- LOOP ---------------------------------*/
@@ -793,6 +790,9 @@ void loop()
         Serial.println("WiFi connected");
         Serial.print("IP: ");
         Serial.println(WiFi.localIP());
+
+        // Connect WebSocket now that WiFi is ready
+        connectWebSocket();
 
         bool devicePaired = prefs.getBool("paired", false);
         

@@ -10,7 +10,7 @@ load_dotenv()
 
 
 Base.metadata.create_all(bind=engine)
-app = FastAPI(title="IoT Health & Activity API")
+app = FastAPI(title="VitaLink AI API")
 
 
 # Configure CORS
@@ -31,9 +31,9 @@ def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
     openapi_schema = get_openapi(
-        title="Health Metrics API",
+        title="VitaLink AI API",
         version="1.0.0",
-        description="API for user authentication and heart metrics tracking",
+        description="Real-time health monitoring API with AI-powered anomaly detection for tracking heart rate, activity levels, and stress metrics from IoT wearable devices",
         routes=app.routes,
     )
     

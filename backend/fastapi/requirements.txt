@@ -1,17 +1,17 @@
 # VitalinkAI Backend Dependencies
 # Compatible versions as of 2025-12-27
 
-fastapi==0.125.0
-uvicorn[standard]==0.38.0
+fastapi==0.127.1
+uvicorn[standard]==0.40.0
 sqlalchemy==2.0.34
 python-jose[cryptography]==3.5.0
 passlib[bcrypt]==1.7.4
-bcrypt==4.0.1 #stable version to prevent build issues on render.com
+bcrypt==4.0.1  # stable version to prevent build issues on render.com
 python-multipart==0.0.21
-pydantic[email]==2.8.2
-pandas==2.2.2
-numpy==1.26.4
+pydantic[email]==2.12.5
+pandas==2.3.3
+numpy==1.26.4  # stable version compatible with  scikit-learn
 scikit-learn==1.8.0  # AI model trained with this version
-joblib==1.4.2
+joblib==1.5.3
 psycopg2-binary==2.9.11
-python-dotenv==0.21.0
+python-dotenv==1.2.1

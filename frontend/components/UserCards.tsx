@@ -86,7 +86,7 @@ export function UserCards({
 
   return (
     <div className="space-y-4 flex-shrink-0">
-      <div className={cn("grid gap-4 grid-cols-[repeat(auto-fit,minmax(170px,1fr))]", isStale && "opacity-60")}>
+      <div className={cn("grid gap-4 grid-cols-1 min-[388px]:grid-cols-[repeat(auto-fit,minmax(170px,1fr))]", isStale && "opacity-60")}>
         {/* Card 1 */}
         <Card className="@container/card relative overflow-hidden flex flex-col">
         <CardHeader className="flex flex-col sm:flex-row items-start gap-2 flex-1">

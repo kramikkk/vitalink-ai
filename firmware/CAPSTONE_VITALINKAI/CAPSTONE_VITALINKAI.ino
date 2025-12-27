@@ -1,21 +1,22 @@
-/* GC9A01 LIBRARIES */
+// Display libraries (GC9A01 round LCD)
 #include <lvgl.h>
 #include <TFT_eSPI.h>
 #include "ui.h"
 
-/* I2C + SENSORS */
+// Sensor libraries (I2C communication)
 #include <Wire.h>
 #include <MPU6050.h>
 #include <math.h>
 #include "MAX30105.h"
 #include "heartRate.h"
 
+// Network and connectivity
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <Preferences.h>
 #include <WebSocketsClient.h>
 
-/* ===================== WIFI ===================== */
+// WiFi configuration and state
 Preferences prefs;
 
 WiFiServer wifiServer(80);
@@ -24,30 +25,30 @@ bool softAPStarted = false;
 unsigned long wifiStartTime = 0;
 unsigned long lastWiFiRetry = 0;
 
-#define WIFI_TIMEOUT 60000   // 1 minute
-#define WIFI_RETRY_INTERVAL 5000  // Retry every 5 seconds
+#define WIFI_TIMEOUT 60000   // Connection timeout (60 seconds)
+#define WIFI_RETRY_INTERVAL 5000  // Retry interval (5 seconds)
 
-/* ===================== PAIRING ===================== */
+// Device pairing state
 String pairingCode = "";
 String deviceId = "";
 unsigned long lastPairingCheck = 0;
-const unsigned long PAIRING_CHECK_INTERVAL = 3000;   // Check every 3 seconds when not paired
-const unsigned long PAIRED_CHECK_INTERVAL = 30000;  // Check every 30 seconds when paired (reduce blocking!)
+const unsigned long PAIRING_CHECK_INTERVAL = 3000;   // Unpaired: check every 3 seconds
+const unsigned long PAIRED_CHECK_INTERVAL = 30000;  // Paired: check every 30 seconds
 
-/* ===================== SENSOR DATA TRANSMISSION ===================== */
+// Sensor data transmission
 unsigned long lastDataSend = 0;
-const unsigned long DATA_SEND_INTERVAL = 1000;  // Send data every 1 second
+const unsigned long DATA_SEND_INTERVAL = 1000;  // Send interval (1 second)
 
 const char* BACKEND_URL = "https://vitalink-ai-backend.onrender.com";
 
-/* ===================== WEBSOCKET CONFIGURATION ===================== */
+// WebSocket configuration
 WebSocketsClient webSocket;
 bool wsConnected = false;
 const char* WS_HOST = "vitalink-ai-backend.onrender.com";
 const int WS_PORT = 443;  // HTTPS port
-const char* WS_PATH = "/ws/sensors";  // WebSocket endpoint
+const char* WS_PATH = "/ws/sensors";
 
-/*--------------------------------- GC9A01 DISPLAY ---------------------------------*/
+// Display configuration (240x240 round LCD)
 static const uint16_t screenWidth  = 240;
 static const uint16_t screenHeight = 240;
 
@@ -56,6 +57,7 @@ static lv_color_t buf[ screenWidth * screenHeight / 10 ];
 
 TFT_eSPI tft = TFT_eSPI();
 
+// WiFi setup portal HTML (stored in flash memory)
 const char WIFI_HTML[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html>
@@ -70,8 +72,16 @@ const char WIFI_HTML[] PROGMEM = R"rawliteral(
 
     body {
       font-family: Arial, sans-serif;
-      background: #0f1115;
+      background: linear-gradient(135deg, #0a0f0a 0%, #0f1115 25%, #14532d 50%, #0f1115 75%, #0a0f0a 100%);
+      background-size: 400% 400%;
+      animation: gradientShift 15s ease infinite;
       color: #e5e7eb;
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
 
     .wrapper {
@@ -86,11 +96,13 @@ const char WIFI_HTML[] PROGMEM = R"rawliteral(
     .card {
       width: 100%;
       max-width: 360px;
-      background: #1c1f26;
+      background: rgba(28, 31, 38, 0.95);
       border-radius: 16px;
       padding: 36px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      box-shadow: 0 10px 40px rgba(20, 83, 45, 0.4), 0 0 1px rgba(34, 197, 94, 0.3);
+      border: 1px solid rgba(34, 197, 94, 0.2);
       text-align: center;
+      backdrop-filter: blur(10px);
     }
 
     h2 {
@@ -160,6 +172,7 @@ const char WIFI_HTML[] PROGMEM = R"rawliteral(
 </html>
 )rawliteral";
 
+// Generate WiFi network list HTML options
 String getWiFiListHTML() {
     String options = "";
 
@@ -172,7 +185,7 @@ String getWiFiListHTML() {
             String ssid = WiFi.SSID(i);
             int rssi = WiFi.RSSI(i);
 
-            // Sanitize SSID for HTML
+            // Sanitize SSID for HTML injection protection
             ssid.replace("'", "");
             ssid.replace("\"", "");
             ssid.replace("<", "");
@@ -188,10 +201,11 @@ String getWiFiListHTML() {
         }
     }
 
-    WiFi.scanDelete();   // free memory
+    WiFi.scanDelete();
     return options;
 }
 
+// Start WiFi Access Point for initial setup
 void startSoftAP() {
     if (softAPStarted) return;
 
@@ -201,10 +215,10 @@ void startSoftAP() {
     WiFi.mode(WIFI_AP_STA);
     WiFi.softAP("VitaLink AI Setup");
 
-    Serial.println("SoftAP started");
+    Serial.print("[WiFi] AP started: ");
     Serial.println(WiFi.softAPIP());
 
-    wifiServer.begin();   // 🔥 IMPORTANT
+    wifiServer.begin();
 
     ui_WiFi_screen_init();
     lv_scr_load(ui_WiFi);
@@ -213,7 +227,8 @@ void startSoftAP() {
         WiFi.softAPIP().toString().c_str());
 }
 
-    String urlDecode(String input) {
+// URL decode function for form data
+String urlDecode(String input) {
     input.replace("+", " ");
     for (int i = 0; i < input.length(); i++) {
         if (input[i] == '%' && i + 2 < input.length()) {
@@ -223,8 +238,9 @@ void startSoftAP() {
         }
     }
     return input;
-    }
+}
 
+// Handle WiFi setup portal requests
 void handleWiFiPortal() {
 
     WiFiClient client = wifiServer.available();
@@ -240,7 +256,7 @@ void handleWiFiPortal() {
         }
     }
 
-    // 🔍 Check POST data
+    // Check for WiFi credentials in POST data
     if (request.indexOf("ssid=") != -1) {
 
         int ssidIndex = request.indexOf("ssid=") + 5;
@@ -256,7 +272,7 @@ void handleWiFiPortal() {
         ssid = urlDecode(ssid);
         pass = urlDecode(pass);
 
-        Serial.println("Saving WiFi:");
+        Serial.print("[WiFi] Saving credentials: ");
         Serial.println(ssid);
 
         prefs.putString("ssid", ssid);
@@ -282,7 +298,9 @@ void handleWiFiPortal() {
             }
 
             body {
-            background: #0f1115;
+            background: linear-gradient(135deg, #0a0f0a 0%, #0f1115 25%, #14532d 50%, #0f1115 75%, #0a0f0a 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
             color: #e5e7eb;
             font-family: Arial, sans-serif;
 
@@ -291,25 +309,36 @@ void handleWiFiPortal() {
             justify-content: center;
             }
 
+            @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+            }
+
             .card {
-            background: #1c1f26;
+            background: rgba(28, 31, 38, 0.95);
             border-radius: 16px;
             padding: 32px;
             width: 90%;
             max-width: 360px;
             text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            box-shadow: 0 10px 40px rgba(20, 83, 45, 0.4), 0 0 1px rgba(34, 197, 94, 0.3);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            backdrop-filter: blur(10px);
             }
 
             h2 {
             margin-top: 0;
             color: #22c55e;
+            text-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
             }
 
             .count {
             font-size: 36px;
             font-weight: bold;
             margin: 16px 0;
+            color: #22c55e;
+            text-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
             }
 
             .hint {
@@ -358,7 +387,7 @@ void handleWiFiPortal() {
 
     }
 
-    // 📄 Serve HTML page
+    // Serve WiFi setup HTML page
     else {
         client.println("HTTP/1.1 200 OK");
         client.println("Content-Type: text/html");
@@ -372,6 +401,7 @@ void handleWiFiPortal() {
     client.stop();
 }
 
+// Generate random 6-digit pairing code
 String generatePairingCode() {
     String code = "";
     for (int i = 0; i < 6; i++) {
@@ -380,109 +410,112 @@ String generatePairingCode() {
     return code;
 }
 
+// Generate unique device ID from ESP32 chip ID
 String generateDeviceId() {
-    // Generate unique device ID from ESP32 chip ID
     uint64_t chipid = ESP.getEfuseMac();
     String id = "VL-";
-    
-    // Extract bytes from chip ID (use bytes 0-2 for uniqueness)
+
+    // Extract lower 3 bytes for uniqueness
     uint8_t byte0 = (chipid >> 0) & 0xFF;
     uint8_t byte1 = (chipid >> 8) & 0xFF;
     uint8_t byte2 = (chipid >> 16) & 0xFF;
-    
-    // Format as hex
+
+    // Format as hex string
     if (byte2 < 16) id += "0";
     id += String(byte2, HEX);
     if (byte1 < 16) id += "0";
     id += String(byte1, HEX);
     if (byte0 < 16) id += "0";
     id += String(byte0, HEX);
-    
+
     id.toUpperCase();
     return id;
 }
 
+// Send pairing request to backend
 void sendPairingRequest() {
     if (WiFi.status() != WL_CONNECTED) return;
-    
+
     HTTPClient http;
     String url = String(BACKEND_URL) + "/api/devices/pair";
-    
+
     http.begin(url);
     http.addHeader("Content-Type", "application/json");
-    
+
     String payload = "{";
     payload += "\"device_id\":\"" + deviceId + "\",";
     payload += "\"pairing_code\":\"" + pairingCode + "\"";
     payload += "}";
-    
+
     int httpCode = http.POST(payload);
     
     if (httpCode > 0) {
-        Serial.printf("Pairing request sent: %d\n", httpCode);
+        Serial.printf("[Pairing] Request sent: HTTP %d\n", httpCode);
         if (httpCode == 200 || httpCode == 201) {
-            Serial.println("Pairing request registered with backend");
+            Serial.println("[Pairing] Registered with backend");
         }
     } else {
-        Serial.printf("Pairing request failed: %s\n", http.errorToString(httpCode).c_str());
+        Serial.printf("[Pairing] Request failed: %s\n", http.errorToString(httpCode).c_str());
     }
     
     http.end();
 }
 
+// Check device pairing status with backend
 bool checkPairingStatus() {
     if (WiFi.status() != WL_CONNECTED) return false;
-    
+
     HTTPClient http;
     String url = String(BACKEND_URL) + "/api/devices/" + deviceId + "/status";
-    
+
     http.begin(url);
     int httpCode = http.GET();
-    
+
     bool paired = false;
-    
+
     if (httpCode == 200) {
         String response = http.getString();
+
         // Check if device is paired
-        if (response.indexOf("\"paired\":true") != -1 || 
+        if (response.indexOf("\"paired\":true") != -1 ||
             response.indexOf("\"status\":\"paired\"") != -1) {
             paired = true;
-            // Only print if this is a new pairing
             if (!prefs.getBool("paired", false)) {
-                Serial.println("Device successfully paired!");
+                Serial.println("[Pairing] Successfully paired");
             }
             prefs.putBool("paired", true);
             prefs.putString("deviceId", deviceId);
         } else if (response.indexOf("\"paired\":false") != -1) {
-            // Device is unpaired on backend
             paired = false;
             if (prefs.getBool("paired", false)) {
-                Serial.println("Device unpaired on backend");
+                Serial.println("[Pairing] Unpaired on backend");
             }
         }
     }
-    
+
     http.end();
     return paired;
 }
 
-int stressLevel = 0;  // Global variable to store stress level from backend
+// Global stress level (0-100) received from backend AI
+int stressLevel = 0;
 
-/* ===================== WEBSOCKET FUNCTIONS ===================== */
+// WebSocket event handler
 
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
     switch(type) {
         case WStype_DISCONNECTED:
-            Serial.println("WebSocket Disconnected");
+            Serial.println("[WebSocket] Disconnected");
             wsConnected = false;
             break;
         case WStype_CONNECTED:
-            Serial.printf("WebSocket Connected to: %s\n", payload);
+            Serial.printf("[WebSocket] Connected to: %s\n", payload);
             wsConnected = true;
             break;
         case WStype_TEXT:
-            Serial.printf("WebSocket message received: %s\n", payload);
-            // Parse stress_level from JSON response
+            Serial.printf("[WebSocket] Message: %s\n", payload);
+
+            // Parse stress level from JSON response
             String message = String((char*)payload);
             int stressIdx = message.indexOf("\"stress_level\":");
             if (stressIdx != -1) {
@@ -493,9 +526,9 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
                 String stressStr = message.substring(colonIdx + 1, endIdx);
                 stressLevel = stressStr.toInt();
 
-                Serial.printf("✓ WebSocket: Stress=%d%%\n", stressLevel);
+                Serial.printf("[WebSocket] Stress level: %d%%\n", stressLevel);
 
-                // Update UI (always update, even if stress is 0)
+                // Update display
                 if (ui_STRESS) lv_arc_set_value(ui_STRESS, stressLevel);
                 if (ui_STRESS_VALUE) {
                     lv_label_set_text_fmt(ui_STRESS_VALUE, "%d", stressLevel);
@@ -505,20 +538,21 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
     }
 }
 
+// Connect to WebSocket server
 void connectWebSocket() {
     if (!WiFi.isConnected()) return;
 
-    Serial.printf("Connecting to WebSocket: wss://%s:%d%s\n", WS_HOST, WS_PORT, WS_PATH);
+    Serial.printf("[WebSocket] Connecting: wss://%s:%d%s\n", WS_HOST, WS_PORT, WS_PATH);
 
-    // Configure WebSocket with SSL
     webSocket.beginSSL(WS_HOST, WS_PORT, WS_PATH);
     webSocket.onEvent(webSocketEvent);
-    webSocket.setReconnectInterval(5000);  // Reconnect every 5 seconds if disconnected
+    webSocket.setReconnectInterval(5000);
 }
 
+// Send sensor data via WebSocket
 void sendSensorDataWebSocket(int heartRate, int motionIntensity) {
     if (!wsConnected) {
-        Serial.println("WebSocket not connected, skipping send");
+        Serial.println("[WebSocket] Not connected, skipping");
         return;
     }
 
@@ -529,9 +563,10 @@ void sendSensorDataWebSocket(int heartRate, int motionIntensity) {
     payload += "}";
 
     webSocket.sendTXT(payload);
-    Serial.printf("✓ WebSocket send: HR=%d Motion=%d\n", heartRate, motionIntensity);
+    Serial.printf("[Sensor] Sent: HR=%d Motion=%d\n", heartRate, motionIntensity);
 }
 
+// Legacy HTTP endpoint for sensor data (WebSocket is preferred)
 void sendSensorData(int heartRate, int motionIntensity) {
     if (WiFi.status() != WL_CONNECTED) return;
 
@@ -552,10 +587,9 @@ void sendSensorData(int heartRate, int motionIntensity) {
     if (httpCode > 0) {
         if (httpCode == 200) {
             String response = http.getString();
-            Serial.println("Sensor data sent successfully");
+            Serial.println("[Sensor] Data sent successfully");
 
-            // Parse confidence_anomaly from JSON response (this is the stress level)
-            // Response format: {"message":"...","metric_id":123,"user_id":1,"prediction":"NORMAL","anomaly_score":0.15,"confidence_anomaly":45.2}
+            // Parse stress level from response
             int confIdx = response.indexOf("\"confidence_anomaly\":");
             if (confIdx != -1) {
                 int colonIdx = response.indexOf(":", confIdx);
@@ -563,11 +597,11 @@ void sendSensorData(int heartRate, int motionIntensity) {
                 if (endIdx == -1) endIdx = response.indexOf("}", colonIdx);
 
                 String confStr = response.substring(colonIdx + 1, endIdx);
-                stressLevel = (int)confStr.toFloat();  // Convert to int (0-100)
+                stressLevel = (int)confStr.toFloat();
 
-                Serial.printf("Stress Level: %d%%\n", stressLevel);
+                Serial.printf("[Sensor] Stress level: %d%%\n", stressLevel);
 
-                // Update UI immediately
+                // Update display
                 if (ui_STRESS) lv_arc_set_value(ui_STRESS, stressLevel);
                 if (ui_STRESS_VALUE) {
                     if (stressLevel > 0) {
@@ -578,23 +612,24 @@ void sendSensorData(int heartRate, int motionIntensity) {
                 }
             }
         } else {
-            Serial.printf("Sensor data send failed: HTTP %d\n", httpCode);
+            Serial.printf("[Sensor] Send failed: HTTP %d\n", httpCode);
             String response = http.getString();
-            Serial.println("Response: " + response);
+            Serial.println("[Sensor] Response: " + response);
         }
     } else {
-        Serial.printf("Sensor data send failed: %s\n", http.errorToString(httpCode).c_str());
+        Serial.printf("[Sensor] Send failed: %s\n", http.errorToString(httpCode).c_str());
     }
 
     http.end();
 }
 
+// Connect to WiFi using stored credentials
 void connectWiFi() {
     String ssid = prefs.getString("ssid", "");
     String pass = prefs.getString("pass", "");
 
     if (ssid.length() == 0) {
-        Serial.println("No WiFi credentials");
+        Serial.println("[WiFi] No credentials found");
         startSoftAP();
         return;
     }
@@ -603,11 +638,11 @@ void connectWiFi() {
     WiFi.begin(ssid.c_str(), pass.c_str());
     wifiStartTime = millis();
 
-    Serial.print("Connecting to ");
+    Serial.print("[WiFi] Connecting to: ");
     Serial.println(ssid);
 }
 
-/* LVGL flush callback */
+// LVGL display flush callback
 void my_disp_flush(lv_disp_drv_t *disp_drv,
                    const lv_area_t *area,
                    lv_color_t *color_p)
@@ -623,20 +658,23 @@ void my_disp_flush(lv_disp_drv_t *disp_drv,
     lv_disp_flush_ready(disp_drv);
 }
 
-/*--------------------------------- MPU6050 ---------------------------------*/
+// MPU6050 motion sensor configuration
 MPU6050 mpu;
 
-const float weightAccel = 0.6;
-const float weightGyro  = 0.4;
-const float emaAlpha = 0.3;
+// Motion intensity calculation weights
+const float weightAccel = 0.6;  // Accelerometer weight
+const float weightGyro  = 0.4;  // Gyroscope weight
+const float emaAlpha = 0.3;     // Smoothing factor
 
+// Calibrated sensor ranges
 const float accelMin = 15800.0;
 const float accelMax = 32000.0;
 const float gyroMin  = 0.0;
 const float gyroMax  = 9000.0;
 
-float smoothed = 0;
+float smoothed = 0;  // Smoothed motion intensity
 
+// Clamp value to 0-1 range
 float clamp01(float v) {
   if (v < 0) return 0;
   if (v > 1) return 1;
@@ -644,53 +682,62 @@ float clamp01(float v) {
 }
 
 unsigned long lastMPUread = 0;
-const unsigned long MPU_INTERVAL = 200;
+const unsigned long MPU_INTERVAL = 200;  // Read every 200ms
 
-/*--------------------------------- MAX30102 ---------------------------------*/
+// MAX30102 heart rate sensor configuration
 MAX30105 particleSensor;
 
+// Heart rate averaging buffer
 const byte RATE_SIZE = 4;
 byte rates[RATE_SIZE];
 byte rateSpot = 0;
-byte ratesFilled = 0;  // Track how many rate slots have valid data
+byte ratesFilled = 0;  // Filled slots counter
 
+// Heart rate measurement variables
 long lastBeat = 0;
 float beatsPerMinute = 0;
 int beatAvg = 0;
 
 unsigned long lastHeartCheck = 0;
-const unsigned long HEART_INTERVAL = 20;
+const unsigned long HEART_INTERVAL = 20;  // Check every 20ms
 
+// Finger detection state
 bool fingerPresent = false;
 unsigned long fingerStartTime = 0;
-const unsigned long FINGER_SETTLE_TIME = 10000;
+const unsigned long FINGER_SETTLE_TIME = 10000;  // 10 second settling
 bool settlingDone = false;
 
+// Unpair detection timer
 unsigned long unpairDetectedAt = 0;
 
+// Clamp integer to range
 int clampInt(int value, int minVal, int maxVal) {
 if (value < minVal) return minVal;
 if (value > maxVal) return maxVal;
 return value;
 }
 
-/*--------------------------------- SETUP ---------------------------------*/
+// Setup function - runs once on boot
 void setup()
 {
     Serial.begin(115200);
 
-    Wire.begin(); 
+    // Initialize I2C
+    Wire.begin();
     Wire.setClock(400000);
 
+    // Initialize heart rate sensor
     if (!particleSensor.begin(Wire, I2C_SPEED_FAST)) {
-        Serial.println("MAX30102 not detected. Check wiring!");
+        Serial.println("[Sensor] MAX30102 not detected");
         while (1);
     }
     particleSensor.setup();
     particleSensor.setPulseAmplitudeRed(0x0A);
 
+    // Initialize motion sensor
     mpu.initialize();
 
+    // Initialize display
     lv_init();
     tft.begin();
     tft.setRotation(1);
@@ -706,73 +753,74 @@ void setup()
     disp_drv.draw_buf = &draw_buf;
     lv_disp_drv_register(&disp_drv);
 
-    /* SPLASH SCREEN */
+    // Show splash screen
     ui_Splash_screen_init();
     lv_scr_load(ui_Splash);
-    Serial.println("Splash Loaded.");
+    Serial.println("[Display] Splash screen loaded");
     lv_timer_handler();
     delay(30);
     delay(3000);
 
+    // Initialize preferences storage
     prefs.begin("wifi", false);
-    
-    // Initialize device ID (persistent)
+
+    // Load or generate device ID
     deviceId = prefs.getString("deviceId", "");
     if (deviceId.length() == 0) {
         deviceId = generateDeviceId();
         prefs.putString("deviceId", deviceId);
-        Serial.println("Generated new Device ID: " + deviceId);
+        Serial.println("[Device] Generated ID: " + deviceId);
     } else {
-        Serial.println("Loaded existing Device ID: " + deviceId);
+        Serial.println("[Device] Loaded ID: " + deviceId);
     }
-    
-    // Debug: Print chip ID
+
+    // Print chip ID for debugging
     uint64_t chipid = ESP.getEfuseMac();
-    Serial.printf("Chip ID: %04X%08X\n", (uint16_t)(chipid>>32), (uint32_t)chipid);
+    Serial.printf("[Device] Chip ID: %04X%08X\n", (uint16_t)(chipid>>32), (uint32_t)chipid);
     if (deviceId.length() == 0) {
         deviceId = generateDeviceId();
         prefs.putString("deviceId", deviceId);
     }
-    
-    // Generate new pairing code each boot (if not paired)
+
+    // Generate pairing code if not paired
     if (!prefs.getBool("paired", false)) {
         pairingCode = generatePairingCode();
-        Serial.println("Device ID: " + deviceId);
-        Serial.println("Pairing Code: " + pairingCode);
+        Serial.println("[Pairing] Device ID: " + deviceId);
+        Serial.println("[Pairing] Code: " + pairingCode);
     }
-    
-    connectWiFi();
 
-    // Note: WebSocket connection is initiated in loop() after WiFi actually connects
+    connectWiFi();
 }
 
-/*--------------------------------- LOOP ---------------------------------*/
+// Main loop - runs continuously
 void loop()
 {
     lv_timer_handler();
     delay(5);
 
+    // Handle serial commands
     if (Serial.available()) {
     String cmd = Serial.readStringUntil('\n');
     cmd.trim();
 
     if (cmd == "RESET_WIFI") {
-        Serial.println("🔁 Clearing WiFi credentials");
+        Serial.println("[WiFi] Clearing credentials and restarting");
         prefs.remove("ssid");
         prefs.remove("pass");
         ESP.restart();
     }
 }
 
+    // Handle WiFi portal requests
     if (softAPStarted) {
     handleWiFiPortal();
     }
 
-    /* ================= WIFI STATE MACHINE ================= */
-    
-    // Check if WiFi disconnected during runtime
+    // WiFi state machine
+
+    // Handle WiFi disconnection
     if (wifiConnected && WiFi.status() != WL_CONNECTED) {
-        Serial.println("WiFi disconnected! Attempting reconnect...");
+        Serial.println("[WiFi] Disconnected, reconnecting...");
         wifiConnected = false;
         wifiStartTime = millis();
         lastWiFiRetry = millis();
@@ -780,6 +828,7 @@ void loop()
         return;
     }
 
+    // Handle WiFi connection success
     if (!wifiConnected && WiFi.status() == WL_CONNECTED) {
         wifiConnected = true;
         softAPStarted = false;
@@ -787,41 +836,40 @@ void loop()
         wifiServer.stop();
         WiFi.softAPdisconnect(true);
 
-        Serial.println("WiFi connected");
-        Serial.print("IP: ");
+        Serial.print("[WiFi] Connected: ");
         Serial.println(WiFi.localIP());
 
-        // Connect WebSocket now that WiFi is ready
+        // Connect WebSocket
         connectWebSocket();
 
         bool devicePaired = prefs.getBool("paired", false);
-        
-        // Check actual pairing status with backend on boot
+
+        // Verify pairing status with backend
         bool actuallyPaired = checkPairingStatus();
-        
-        // If we thought we were paired but backend says no, update local state
+
+        // Handle unpaired while offline
         if (devicePaired && !actuallyPaired) {
-            Serial.println("Device was unpaired while offline. Updating local state.");
+            Serial.println("[Pairing] Device unpaired while offline");
             devicePaired = false;
             prefs.putBool("paired", false);
-            // Generate new pairing code since we need to pair again
             pairingCode = generatePairingCode();
-            Serial.println("New Pairing Code: " + pairingCode);
+            Serial.println("[Pairing] New code: " + pairingCode);
         }
-        
+
+        // Show appropriate screen
         if (!devicePaired) {
             ui_Pairing_screen_init();
             lv_scr_load(ui_Pairing);
-            
-            // Display pairing code on screen
+
+            // Display pairing info
             if (ui_Code) {
                 lv_label_set_text(ui_Code, pairingCode.c_str());
             }
             if (ui_Title) {
                 lv_label_set_text(ui_Title, deviceId.c_str());
             }
-            
-            // Send pairing request to backend
+
+            // Send pairing request
             sendPairingRequest();
             lastPairingCheck = millis();
         } else {
@@ -830,7 +878,7 @@ void loop()
         }
     }
 
-    /* WiFi retry logic - try every 10 seconds */
+    // WiFi retry logic
     if (!wifiConnected && !softAPStarted) {
         if (millis() - lastWiFiRetry >= WIFI_RETRY_INTERVAL) {
             lastWiFiRetry = millis();
@@ -841,29 +889,28 @@ void loop()
                 return;
             }
 
-            // 🚫 DO NOT TOUCH WIFI IF ALREADY CONNECTING
+            // Handle WiFi state transitions
             if (status == WL_IDLE_STATUS) {
-                Serial.println("WiFi idle, starting connection...");
+                Serial.println("[WiFi] Idle, starting connection");
                 WiFi.begin(
                     prefs.getString("ssid", "").c_str(),
                     prefs.getString("pass", "").c_str()
                 );
             }
             else if (status == WL_DISCONNECTED) {
-                Serial.println("WiFi disconnected, retrying...");
+                Serial.println("[WiFi] Retrying...");
                 WiFi.begin(
                     prefs.getString("ssid", "").c_str(),
                     prefs.getString("pass", "").c_str()
                 );
             }
             else {
-                // WL_CONNECTING or others
-                Serial.println("WiFi connecting... waiting");
+                Serial.println("[WiFi] Connecting...");
             }
 
-            // Timeout fallback
+            // Connection timeout fallback
             if (millis() - wifiStartTime > WIFI_TIMEOUT) {
-                Serial.println("WiFi timeout → SoftAP");
+                Serial.println("[WiFi] Timeout, starting AP");
                 prefs.remove("ssid");
                 prefs.remove("pass");
                 startSoftAP();
@@ -871,16 +918,15 @@ void loop()
         }
     }
 
-
-    /* Stop here if WiFi not ready */
+    // Exit if WiFi not ready
     if (!wifiConnected) {
         return;
     }
 
-    /* WEBSOCKET LOOP - non-blocking! Takes only ~1-5ms */
+    // Process WebSocket events (non-blocking)
     webSocket.loop();
-    
-/* ================= PAIRING CHECK ================= */
+
+// Pairing status check
 bool devicePaired = prefs.getBool("paired", false);
 unsigned long checkInterval = devicePaired ? PAIRED_CHECK_INTERVAL : PAIRING_CHECK_INTERVAL;
 
@@ -889,31 +935,33 @@ if (millis() - lastPairingCheck >= checkInterval) {
 
     bool currentlyPaired = checkPairingStatus();
 
+    // Handle pairing state change
     if (!devicePaired && currentlyPaired) {
-        Serial.println("Switching to Main screen");
+        Serial.println("[Display] Switching to Main screen");
 
         ui_Main_screen_init();
         lv_scr_load(ui_Main);
 
-        unpairDetectedAt = 0;  // reset safety timer
+        unpairDetectedAt = 0;
         return;
     }
 
+    // Handle unpair detected
     if (devicePaired && !currentlyPaired) {
 
         if (unpairDetectedAt == 0) {
             unpairDetectedAt = millis();
-            Serial.println("Unpair detected, waiting to confirm...");
+            Serial.println("[Pairing] Unpair detected, confirming...");
         }
 
-        // Confirm if actually unpaired after 1 second to avoid backend wrong flag
+        // Confirm unpair after 1 second
         if (millis() - unpairDetectedAt >= 1000) {
-            Serial.println("Confirmed remote unpair. Switching to Pairing screen.");
+            Serial.println("[Pairing] Remote unpair confirmed");
 
             prefs.putBool("paired", false);
 
             pairingCode = generatePairingCode();
-            Serial.println("New Pairing Code: " + pairingCode);
+            Serial.println("[Pairing] New code: " + pairingCode);
 
             ui_Pairing_screen_init();
             lv_scr_load(ui_Pairing);
@@ -932,50 +980,51 @@ if (millis() - lastPairingCheck >= checkInterval) {
         }
     }
     else {
-        // paired state is stable again → reset timer
         unpairDetectedAt = 0;
     }
 }
-    
-    /* Skip sensor readings if not paired */
+
+    // Skip sensor readings if not paired
     if (!devicePaired) {
         return;
     }
 
-    /* HEART SENSOR */
+    // Heart rate sensor processing
     if (millis() - lastHeartCheck >= HEART_INTERVAL) {
 
         lastHeartCheck = millis();
         long irValue = particleSensor.getIR();
 
+        // No finger detected
         if (irValue < 50000) {
             fingerPresent = false;
             settlingDone = false;
             beatAvg = 0;
-            ratesFilled = 0;  // Reset counter when finger is removed
-            stressLevel = 0;  // Reset stress level when no finger
+            ratesFilled = 0;
+            stressLevel = 0;
 
             if (ui_HEART) lv_arc_set_value(ui_HEART, 0);
             if (ui_BPM_VALUE) lv_label_set_text(ui_BPM_VALUE, "---");
 
-            // Reset stress display
             if (ui_STRESS) lv_arc_set_value(ui_STRESS, 0);
             if (ui_STRESS_VALUE) lv_label_set_text(ui_STRESS_VALUE, "---");
 
             return;
         }
 
+        // Finger just placed
         if (!fingerPresent) {
             fingerPresent = true;
             fingerStartTime = millis();
             rateSpot = 0;
             memset(rates, 0, sizeof(rates));
-            ratesFilled = 0;  // Reset counter when finger is first placed
+            ratesFilled = 0;
             if (ui_BPM_VALUE) lv_label_set_text(ui_BPM_VALUE, "...");
             if (ui_STRESS_VALUE) lv_label_set_text(ui_STRESS_VALUE, "...");
             return;
         }
 
+        // Process heartbeat detection
         if (checkForBeat(irValue)) {
             long delta = millis() - lastBeat;
             lastBeat = millis();
@@ -985,7 +1034,6 @@ if (millis() - lastPairingCheck >= checkInterval) {
                 rates[rateSpot++] = (byte)beatsPerMinute;
                 rateSpot %= RATE_SIZE;
 
-                // Track how many valid samples we have (up to RATE_SIZE)
                 if (ratesFilled < RATE_SIZE) ratesFilled++;
 
                 beatAvg = 0;
@@ -994,28 +1042,28 @@ if (millis() - lastPairingCheck >= checkInterval) {
             }
         }
 
-        // Update display immediately when ratesFilled >= RATE_SIZE
-        // Show "..." while settling, then actual values when ready
+        // Update display
         if (ratesFilled >= RATE_SIZE) {
             settlingDone = true;
             if (ui_HEART) lv_arc_set_value(ui_HEART, beatAvg);
             if (ui_BPM_VALUE) lv_label_set_text_fmt(ui_BPM_VALUE, "%d", beatAvg);
         } else {
-            // Still filling up the rates array, show "..." (finger detected but settling)
             if (ui_HEART) lv_arc_set_value(ui_HEART, 0);
             if (ui_BPM_VALUE) lv_label_set_text(ui_BPM_VALUE, "...");
             if (ui_STRESS_VALUE) lv_label_set_text(ui_STRESS_VALUE, "...");
         }
     }
 
-/* MOTION SENSOR */
+// Motion sensor processing
 if (millis() - lastMPUread >= MPU_INTERVAL) {
 
     lastMPUread = millis();
 
+    // Read sensor data
     int16_t ax, ay, az, gx, gy, gz;
     mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
+    // Convert to float
     float axf = (float)ax;
     float ayf = (float)ay;
     float azf = (float)az;
@@ -1023,9 +1071,11 @@ if (millis() - lastMPUread >= MPU_INTERVAL) {
     float gyf = (float)gy;
     float gzf = (float)gz;
 
+    // Calculate magnitudes
     float accelMag = sqrt(axf*axf + ayf*ayf + azf*azf);
     float gyroMag  = sqrt(gxf*gxf + gyf*gyf + gzf*gzf);
 
+    // Normalize to 0-1 range
     float normAccel = 0;
     if (accelMax > accelMin)
         normAccel = (accelMag - accelMin) / (accelMax - accelMin);
@@ -1037,40 +1087,39 @@ if (millis() - lastMPUread >= MPU_INTERVAL) {
     normAccel = clamp01(normAccel);
     normGyro  = clamp01(normGyro);
 
+    // Weighted combination
     float combined = weightAccel * normAccel + weightGyro * normGyro;
 
     if (!isfinite(combined)) combined = 0;
     if (!isfinite(smoothed)) smoothed = 0;
 
+    // Apply smoothing
     smoothed = emaAlpha * combined + (1 - emaAlpha) * smoothed;
 
+    // Convert to percentage
     int intensity = clampInt((int)(smoothed * 100), 0, 100);
 
+    // Update display
     if (ui_ACTIVITY) lv_arc_set_value(ui_ACTIVITY, intensity);
     if (ui_ACTIVITY_VALUE)
         lv_label_set_text_fmt(ui_ACTIVITY_VALUE, "%d", intensity);
 }
-    
-    /* SEND SENSOR DATA TO BACKEND VIA WEBSOCKET */
+
+    // Send sensor data to backend
     if (millis() - lastDataSend >= DATA_SEND_INTERVAL) {
         lastDataSend = millis();
 
         int currentIntensity = clampInt((int)(smoothed * 100), 0, 100);
 
-        // Only send valid heart rate if all rate slots are filled (stable reading)
-        // This prevents sending gradually increasing HR values during initial detection
+        // Only send when heart rate is stable
         int hrToSend = (ratesFilled >= RATE_SIZE) ? beatAvg : 0;
 
-        // Don't send if no valid heart rate (no finger detected)
+        // Skip if no valid heart rate
         if (hrToSend == 0) {
-            Serial.println("No valid heart rate, skipping send");
+            Serial.println("[Sensor] No valid heart rate");
             return;
         }
 
-        sendSensorDataWebSocket(hrToSend, currentIntensity);  // Use WebSocket instead of HTTP
-
-        // Debug output
-        Serial.printf("Sending: HR=%d, Motion=%d (ratesFilled=%d/%d)\n",
-                     hrToSend, currentIntensity, ratesFilled, RATE_SIZE);
+        sendSensorDataWebSocket(hrToSend, currentIntensity);
     }
 }

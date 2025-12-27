@@ -10,11 +10,25 @@ DATA_PATH = os.path.join(BASE_DIR, "training_data.csv")
 MODEL_PATH = os.path.join(BASE_DIR, "model.joblib")
 SCALER_PATH = os.path.join(BASE_DIR, "scaler.joblib")
 
+# Cache loaded models to avoid reloading from disk on every prediction
+_cached_model = None
+_cached_scaler = None
+
+def clear_model_cache():
+    """Clear cached model and scaler to force reload from disk."""
+    global _cached_model, _cached_scaler
+    _cached_model = None
+    _cached_scaler = None
+
+
 def train_model():
     """
     Train the Isolation Forest model using training data.
     Returns success message or raises error if training data is missing.
     """
+    # Clear cache since we're retraining
+    clear_model_cache()
+
     if not os.path.exists(DATA_PATH):
         raise FileNotFoundError(f"training_data.csv is missing at {DATA_PATH}")
 
@@ -82,9 +96,15 @@ def predict(heart_rate: float, motion_intensity: float):
         }
 
     try:
-        # Load model and scaler
-        model = joblib.load(MODEL_PATH)
-        scaler = joblib.load(SCALER_PATH)
+        # Load model and scaler from cache or disk
+        global _cached_model, _cached_scaler
+
+        if _cached_model is None or _cached_scaler is None:
+            _cached_model = joblib.load(MODEL_PATH)
+            _cached_scaler = joblib.load(SCALER_PATH)
+
+        model = _cached_model
+        scaler = _cached_scaler
 
         # Prepare data with feature names to match training data
         data = pd.DataFrame([[heart_rate, motion_intensity]], columns=["heart_rate", "motion_intensity"])

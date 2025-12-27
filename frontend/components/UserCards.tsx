@@ -135,7 +135,7 @@ export function UserCards({
       </Card>
 
       {/* Card 3 */}
-      <Card className="@container/card relative overflow-hidden col-span-2 flex flex-col">
+      <Card className="@container/card relative overflow-hidden col-span-1 min-[388px]:col-span-2 flex flex-col">
         <CardHeader className="flex flex-row items-start justify-between gap-2 flex-1">
           <div className="flex-1 min-w-0">
             <CardDescription className="truncate flex items-center gap-1.5">

@@ -5,7 +5,6 @@ import { UserCards } from "@/components/UserCards"
 import { AppAreaChart } from "@/components/AppAreaChart"
 import AlertCards from "@/components/AlertCards"
 import UserProfileCard from "@/components/UserProfileCard"
-import { ChartFilters } from "@/components/ChartFilters"
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { useRoleProtection } from "@/hooks/use-role-protection"
 import { UserRole, metricsApi, tokenManager } from "@/lib/api"
@@ -13,10 +12,7 @@ import { UserRole, metricsApi, tokenManager } from "@/lib/api"
 const page = () => {
   // Protect this route - only allow STUDENT role
   useRoleProtection([UserRole.STUDENT])
-  
-  const [selectedMetric, setSelectedMetric] = useState<"All" | "HeartRate" | "ActivityLevel" | "StressLevel">("All")
-  const [timeRange, setTimeRange] = useState("live")
-  
+
   // Metrics state
   const [heartRate, setHeartRate] = useState<number>(0)
   const [activityLevel, setActivityLevel] = useState<number>(0)
@@ -72,31 +68,18 @@ const page = () => {
       {/* Header Section */}
       <Card className="flex-shrink-0">
         <CardHeader>
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-            <div className="flex-1">
-              <CardTitle className="text-xl sm:text-2xl lg:text-3xl flex items-center gap-3">
-                IoT Health & Activity Dashboard for Students
-                <span className="flex items-center gap-2">
-                  <span className={`h-3 w-3 rounded-full ${isStale ? 'bg-red-500 animate-pulse' : 'bg-green-500 animate-pulse'}`}></span>
-                  <span className="text-sm font-normal text-muted-foreground">
-                    {isStale ? 'Offline' : 'Online'}
-                  </span>
-                </span>
-              </CardTitle>
-              <CardDescription className="text-sm sm:text-base">
-                Monitor your health metrics and activity levels in real-time
-              </CardDescription>
-            </div>
-            <div className="flex flex-col gap-3">
-              <ChartFilters
-                selectedMetric={selectedMetric}
-                timeRange={timeRange}
-                onMetricChange={setSelectedMetric}
-                onTimeRangeChange={setTimeRange}
-                isStale={isStale}
-              />
-            </div>
-          </div>
+          <CardTitle className="text-xl sm:text-2xl lg:text-3xl flex items-center gap-3">
+            IoT Health & Activity Dashboard for Students
+            <span className="flex items-center gap-2">
+              <span className={`h-3 w-3 rounded-full ${isStale ? 'bg-red-500 animate-pulse' : 'bg-green-500 animate-pulse'}`}></span>
+              <span className="text-sm font-normal text-muted-foreground">
+                {isStale ? 'Offline' : 'Online'}
+              </span>
+            </span>
+          </CardTitle>
+          <CardDescription className="text-sm sm:text-base">
+            Monitor your health metrics and activity levels in real-time
+          </CardDescription>
         </CardHeader>
       </Card>
 
@@ -117,7 +100,7 @@ const page = () => {
           </div>
           {/* AppAreaChart fills remaining space */}
           <div className="flex-1 min-h-[400px]">
-            <AppAreaChart selectedMetric={selectedMetric} timeRange={timeRange} isStale={isStale} />
+            <AppAreaChart isStale={isStale} />
           </div>
         </div>
 

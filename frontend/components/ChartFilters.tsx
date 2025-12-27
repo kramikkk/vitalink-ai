@@ -28,7 +28,7 @@ export function ChartFilters({
       <label className="text-sm font-medium">Chart Filters</label>
       <div className="flex flex-col sm:flex-row gap-2">
         <Select value={selectedMetric} onValueChange={onMetricChange}>
-          <SelectTrigger className="w-full sm:w-[180px]">
+          <SelectTrigger className="w-full sm:w-[140px]">
             <SelectValue placeholder="Select metric" />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
@@ -39,7 +39,7 @@ export function ChartFilters({
           </SelectContent>
         </Select>
         <Select value={timeRange} onValueChange={onTimeRangeChange}>
-          <SelectTrigger className="w-full sm:w-[180px]">
+          <SelectTrigger className="w-full sm:w-[150px]">
             <SelectValue placeholder="Time range" />
           </SelectTrigger>
           <SelectContent className="rounded-xl">

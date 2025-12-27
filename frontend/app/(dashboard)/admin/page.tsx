@@ -5,7 +5,6 @@ import { UserCards } from "@/components/UserCards"
 import { AppAreaChart } from "@/components/AppAreaChart"
 import AlertCards from "@/components/AlertCards"
 import UserProfileCard from "@/components/UserProfileCard"
-import { ChartFilters } from "@/components/ChartFilters"
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
@@ -26,9 +25,7 @@ const AdminPage = () => {
 	const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
 	const [searchQuery, setSearchQuery] = useState("")
 	const [open, setOpen] = useState(false)
-	const [selectedMetric, setSelectedMetric] = useState<"All" | "HeartRate" | "ActivityLevel" | "StressLevel">("All")
-	const [timeRange, setTimeRange] = useState("live")
-	
+
 	// Metrics state for selected student
 	const [heartRate, setHeartRate] = useState<number>(0)
 	const [activityLevel, setActivityLevel] = useState<number>(0)
@@ -158,22 +155,10 @@ const AdminPage = () => {
 							</CardDescription>
 						</div>
 
-						<div className="flex flex-col lg:flex-row gap-4">
-							{/* Chart Filters */}
-							<div className="flex flex-col justify-between">
-								<ChartFilters
-									selectedMetric={selectedMetric}
-									timeRange={timeRange}
-									onMetricChange={setSelectedMetric}
-									onTimeRangeChange={setTimeRange}
-									isStale={isStale}
-								/>
-							</div>
-
-							{/* Student Selector */}
-							<div className="flex flex-col justify-between gap-2">
-								<label className="text-sm font-medium">Select Student</label>
-								<Popover open={open} onOpenChange={setOpen}>
+						{/* Student Selector */}
+						<div className="flex flex-col gap-2 flex-shrink-0">
+							<label className="text-sm font-medium">Select Student</label>
+							<Popover open={open} onOpenChange={setOpen}>
 							<PopoverTrigger asChild>
 								<Button
 									variant="outline"
@@ -276,11 +261,12 @@ const AdminPage = () => {
 												</div>
 											</PopoverContent>
 										</Popover>
-									</div>
-							</div>
 						</div>
-					</CardHeader>
-				</Card>			{/* Hidden profile card for admin's own profile editing */}
+					</div>
+				</CardHeader>
+			</Card>
+
+			{/* Hidden profile card for admin's own profile editing */}
 			<div className="hidden">
 				<UserProfileCard />
 			</div>
@@ -309,8 +295,6 @@ const AdminPage = () => {
 					</div>
 					<div className="flex-1 min-h-[400px]">
 					<AppAreaChart
-						selectedMetric={selectedMetric}
-						timeRange={timeRange}
 						student={transformedStudent}
 						studentId={selectedStudent ? parseInt(selectedStudent) : undefined}
 						isStale={isStale}

@@ -118,9 +118,15 @@ def get_metrics_history(
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid end_time format. Use ISO format.")
     
-    # Order by timestamp and apply limit
-    results = query.order_by(Metrics.timestamp.asc()).limit(limit).all()
-    
+    # When no time filter is specified, fetch the LAST N records (most recent)
+    # Order descending, limit, then reverse to ascending for chart display
+    if not start_time and not end_time:
+        results = query.order_by(Metrics.timestamp.desc()).limit(limit).all()
+        results.reverse()  # Reverse to ascending order for chart
+    else:
+        # With time filters, just order ascending normally
+        results = query.order_by(Metrics.timestamp.asc()).limit(limit).all()
+
     return [{
         "id": m.id,
         "heart_rate": m.heart_rate,
@@ -217,9 +223,15 @@ def get_student_metrics_history(
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid end_time format. Use ISO format.")
     
-    # Order by timestamp and apply limit
-    results = query.order_by(Metrics.timestamp.asc()).limit(limit).all()
-    
+    # When no time filter is specified, fetch the LAST N records (most recent)
+    # Order descending, limit, then reverse to ascending for chart display
+    if not start_time and not end_time:
+        results = query.order_by(Metrics.timestamp.desc()).limit(limit).all()
+        results.reverse()  # Reverse to ascending order for chart
+    else:
+        # With time filters, just order ascending normally
+        results = query.order_by(Metrics.timestamp.asc()).limit(limit).all()
+
     return [{
         "id": m.id,
         "heart_rate": m.heart_rate,

@@ -13,6 +13,7 @@ interface ChartFiltersProps {
   timeRange: string
   onMetricChange: (value: "All" | "HeartRate" | "ActivityLevel" | "StressLevel") => void
   onTimeRangeChange: (value: string) => void
+  isStale?: boolean
 }
 
 export function ChartFilters({
@@ -20,6 +21,7 @@ export function ChartFilters({
   timeRange,
   onMetricChange,
   onTimeRangeChange,
+  isStale = false,
 }: ChartFiltersProps) {
   return (
     <div className="flex flex-col gap-2">
@@ -41,7 +43,7 @@ export function ChartFilters({
             <SelectValue placeholder="Time range" />
           </SelectTrigger>
           <SelectContent className="rounded-xl">
-            <SelectItem value="live">Live (seconds)</SelectItem>
+            <SelectItem value="live">{isStale ? "Recent Data" : "Live Data"}</SelectItem>
             <SelectItem value="1h">Last 1 hour</SelectItem>
             <SelectItem value="24h">Last 24 hours</SelectItem>
             <SelectItem value="7d">Last 7 days</SelectItem>

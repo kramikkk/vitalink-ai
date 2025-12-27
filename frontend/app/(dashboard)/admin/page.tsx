@@ -166,6 +166,7 @@ const AdminPage = () => {
 									timeRange={timeRange}
 									onMetricChange={setSelectedMetric}
 									onTimeRangeChange={setTimeRange}
+									isStale={isStale}
 								/>
 							</div>
 

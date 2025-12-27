@@ -111,9 +111,9 @@ def predict(heart_rate: float, motion_intensity: float):
 
         return {
             "prediction": status,
-            "anomaly_score": round(float(score), 4),
-            "confidence_normal": round(confidence_normal, 2),
-            "confidence_anomaly": round(confidence_anomaly, 2)
+            "anomaly_score": float(round(float(score), 4)),
+            "confidence_normal": float(round(float(confidence_normal), 2)),
+            "confidence_anomaly": float(round(float(confidence_anomaly), 2))
         }
 
     except Exception as e:

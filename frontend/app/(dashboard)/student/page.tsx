@@ -93,6 +93,7 @@ const page = () => {
                 timeRange={timeRange}
                 onMetricChange={setSelectedMetric}
                 onTimeRangeChange={setTimeRange}
+                isStale={isStale}
               />
             </div>
           </div>

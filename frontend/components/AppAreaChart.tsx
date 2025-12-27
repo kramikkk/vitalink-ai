@@ -68,14 +68,29 @@ export function AppAreaChart({
 }: AppAreaChartProps) {
   const [chartData, setChartData] = React.useState<Array<{date: string, HeartRate: number, ActivityLevel: number, StressLevel: number}>>([])
   const [loading, setLoading] = React.useState(true)
+  const prevIsStaleRef = React.useRef(isStale)
+  const prevTimeRangeRef = React.useRef(timeRange)
+  const [pendingTimeRange, setPendingTimeRange] = React.useState<string | null>(null)
+
+  // Track time range changes and mark as pending until new data arrives
+  React.useEffect(() => {
+    if (prevTimeRangeRef.current !== timeRange) {
+      setPendingTimeRange(prevTimeRangeRef.current)
+    }
+    prevTimeRangeRef.current = timeRange
+  }, [timeRange])
+
+  // Clear chart when device comes back online (stale -> live transition)
+  React.useEffect(() => {
+    // Detect transition from stale (true) to live (false)
+    if (prevIsStaleRef.current === true && isStale === false && timeRange === "live") {
+      setChartData([]) // Clear chart for fresh start
+    }
+    prevIsStaleRef.current = isStale
+  }, [isStale, timeRange])
 
   // Fetch data from backend based on time range
   React.useEffect(() => {
-    // Don't fetch if device is offline (stale data) in live mode
-    if (isStale && timeRange === "live") {
-      return
-    }
-
     const fetchData = async () => {
       const token = tokenManager.getToken()
       if (!token) {
@@ -87,49 +102,69 @@ export function AppAreaChart({
         setLoading(true)
         const now = new Date()
         let startTime: Date
+        let metrics;
 
-        // Calculate start time based on time range
-        switch(timeRange) {
-          case "live":
-            startTime = new Date(now.getTime() - 60 * 1000) // Last 60 seconds
-            break
-          case "1h":
-            startTime = new Date(now.getTime() - 60 * 60 * 1000) // Last 1 hour
-            break
-          case "24h":
-            startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000) // Last 24 hours
-            break
-          case "7d":
-            startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
-            break
-          case "30d":
-            startTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
-            break
-          case "12mo":
-            startTime = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000) // Last 12 months
-            break
-          default:
-            startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+        // For stale live mode, use limit-based fetching instead of time-based for speed
+        if (timeRange === "live" && isStale) {
+          // Fetch last 100 records without time filter for faster loading
+          metrics = studentId
+            ? await metricsApi.getStudentMetricsHistory(
+                token,
+                studentId,
+                undefined, // no start time
+                undefined, // no end time
+                100        // just last 100 records
+              )
+            : await metricsApi.getMetricsHistory(
+                token,
+                undefined, // no start time
+                undefined, // no end time
+                100        // just last 100 records
+              )
+        } else {
+          // For all other modes, use time-based filtering
+          switch(timeRange) {
+            case "live":
+              startTime = new Date(now.getTime() - 60 * 1000) // Last 60 seconds when live
+              break
+            case "1h":
+              startTime = new Date(now.getTime() - 60 * 60 * 1000) // Last 1 hour
+              break
+            case "24h":
+              startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000) // Last 24 hours
+              break
+            case "7d":
+              startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
+              break
+            case "30d":
+              startTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+              break
+            case "12mo":
+              startTime = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000) // Last 12 months
+              break
+            default:
+              startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+          }
+
+          // Fetch metrics - use student-specific endpoint if studentId is provided (admin mode)
+          metrics = studentId
+            ? await metricsApi.getStudentMetricsHistory(
+                token,
+                studentId,
+                startTime.toISOString(),
+                now.toISOString(),
+                10000
+              )
+            : await metricsApi.getMetricsHistory(
+                token,
+                startTime.toISOString(),
+                now.toISOString(),
+                10000
+              )
         }
 
-        // Fetch metrics - use student-specific endpoint if studentId is provided (admin mode)
-        const metrics = studentId
-          ? await metricsApi.getStudentMetricsHistory(
-              token,
-              studentId,
-              startTime.toISOString(),
-              now.toISOString(),
-              10000
-            )
-          : await metricsApi.getMetricsHistory(
-              token,
-              startTime.toISOString(),
-              now.toISOString(),
-              10000
-            )
-
         // Transform backend data to chart format
-        const transformedData = metrics.map(m => ({
+        let transformedData = metrics.map(m => ({
           date: m.timestamp,
           HeartRate: Math.round(m.heart_rate),
           ActivityLevel: Math.round(m.motion_intensity),
@@ -137,15 +172,45 @@ export function AppAreaChart({
           StressLevel: Math.round(m.confidence_anomaly)
         }))
 
+        // For stale live mode: Show only the most recent continuous session
+        // This handles cases where device went online/offline multiple times
+        if (timeRange === "live" && isStale && transformedData.length > 0) {
+          // Find the most recent continuous session by looking for gaps
+          // A gap is defined as more than 3 seconds between consecutive data points
+          const GAP_THRESHOLD = 3000 // 3 seconds in milliseconds
+
+          // Start from the end (most recent) and work backwards
+          let sessionStartIndex = transformedData.length - 1
+
+          for (let i = transformedData.length - 1; i > 0; i--) {
+            const currentTime = new Date(transformedData[i].date).getTime()
+            const previousTime = new Date(transformedData[i - 1].date).getTime()
+            const gap = currentTime - previousTime
+
+            // If we find a gap, this is where the most recent session started
+            if (gap > GAP_THRESHOLD) {
+              sessionStartIndex = i
+              break
+            }
+          }
+
+          // Keep only the most recent continuous session
+          transformedData = transformedData.slice(sessionStartIndex)
+        }
+
         setChartData(transformedData)
+        // Clear pending state now that new data has arrived
+        setPendingTimeRange(null)
       } catch (error) {
         console.error('Error fetching metrics history:', error)
         setChartData([])
+        setPendingTimeRange(null)
       } finally {
         setLoading(false)
       }
     }
 
+    // Always fetch data on mount or when dependencies change
     fetchData()
 
     // Auto-refresh for live mode (only if device is online)
@@ -160,7 +225,11 @@ export function AppAreaChart({
   const processedData = React.useMemo(() => {
     if (chartData.length === 0) return []
 
-    switch(timeRange) {
+    // If we're transitioning between time ranges, use the OLD time range for processing
+    // until the new data arrives. This prevents showing wrong aggregation.
+    const activeTimeRange = pendingTimeRange || timeRange
+
+    switch(activeTimeRange) {
       case "live":
         // Display raw per-second values - no aggregation needed
         // Shows real-time data as it comes from sensors (stored per second in DB)
@@ -266,7 +335,7 @@ export function AppAreaChart({
       default:
         return chartData
     }
-  }, [chartData, timeRange])
+  }, [chartData, timeRange, pendingTimeRange])
 
   // Calculate statistics (min, max, avg) based on the filtered time range
   // Min/Max are calculated from the processed (aggregated) data points
@@ -469,11 +538,16 @@ export function AppAreaChart({
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 px-2 pt-4 sm:px-6 sm:pt-6 min-h-0">
-        <ChartContainer
-          config={chartConfig}
-          className="h-full w-full"
-        >
-          <AreaChart data={processedData}>
+        {(loading || pendingTimeRange) ? (
+          <div className="h-full w-full flex items-center justify-center">
+            <p className="text-muted-foreground">Loading chart data...</p>
+          </div>
+        ) : (
+          <ChartContainer
+            config={chartConfig}
+            className="h-full w-full"
+          >
+            <AreaChart data={processedData}>
             <defs>
             <linearGradient id="fillHeartRate" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="var(--chart-1)" stopOpacity={0.8} />
@@ -571,6 +645,7 @@ export function AppAreaChart({
             <ChartLegend content={<ChartLegendContent />} />
           </AreaChart>
         </ChartContainer>
+        )}
       </CardContent>
     </Card>
   )

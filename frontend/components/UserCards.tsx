@@ -71,14 +71,14 @@ export function UserCards({
 
   // Stress Level: Low (<60), Normal (60-80), High (>80)
   const getStressColor = (value: number) => {
-    if (value === 0) return "text-muted-foreground"
+    if (heartRate === 0) return "text-muted-foreground"  // No data when no heart rate
     if (value < 60) return "text-green-500"
     if (value > 80) return "text-red-500"
     return "text-yellow-500"
   }
-  
+
   const getStressStatus = (value: number) => {
-    if (value === 0) return "No Data"
+    if (heartRate === 0) return "No Data"  // No data when no heart rate
     if (value < 60) return "Low"
     if (value > 80) return "High"
     return "Moderate"
@@ -145,7 +145,7 @@ export function UserCards({
               <Brain className="size-4" />
             </CardDescription>
             <CardTitle className="text-2xl lg:text-3xl font-semibold tabular-nums truncate mb-2 sm:mb-0">
-              {stressLevel > 0 ? `${stressLevel}%` : "--"}
+              {heartRate > 0 ? `${stressLevel}%` : "--"}
             </CardTitle>
           </div>
           <div className="flex flex-col items-end gap-1 flex-shrink-0">

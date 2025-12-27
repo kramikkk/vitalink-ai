@@ -495,9 +495,9 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
 
                 Serial.printf("✓ WebSocket: Stress=%d%%\n", stressLevel);
 
-                // Update UI
+                // Update UI (always update, even if stress is 0)
                 if (ui_STRESS) lv_arc_set_value(ui_STRESS, stressLevel);
-                if (ui_STRESS_VALUE && stressLevel > 0) {
+                if (ui_STRESS_VALUE) {
                     lv_label_set_text_fmt(ui_STRESS_VALUE, "%d", stressLevel);
                 }
             }

@@ -168,19 +168,19 @@ const AlertCards = ({ student, studentId, isStale = false }: AlertCardsProps) =>
     switch (alert.alert_type) {
       case "HIGH_HEART_RATE":
         return alert.heart_rate ? (
-          <div className="flex items-center gap-3 text-xs opacity-75">
+          <div className="flex items-center gap-2 @md:gap-3 text-[10px] @md:text-xs opacity-75 flex-wrap">
             <span>HR: {Math.round(alert.heart_rate)} BPM</span>
           </div>
         ) : null
       case "HIGH_ACTIVITY":
         return alert.motion_intensity !== undefined ? (
-          <div className="flex items-center gap-3 text-xs opacity-75">
+          <div className="flex items-center gap-2 @md:gap-3 text-[10px] @md:text-xs opacity-75 flex-wrap">
             <span>Activity: {Math.round(alert.motion_intensity)}%</span>
           </div>
         ) : null
       case "AI_ANOMALY":
         return (
-          <div className="flex items-center gap-3 text-xs opacity-75">
+          <div className="flex items-center gap-2 @md:gap-3 text-[10px] @md:text-xs opacity-75 flex-wrap">
             {alert.heart_rate && (
               <span>HR: {Math.round(alert.heart_rate)} BPM</span>
             )}
@@ -191,7 +191,7 @@ const AlertCards = ({ student, studentId, isStale = false }: AlertCardsProps) =>
               <span>Stress: {Math.round(alert.stress_level)}%</span>
             )}
             {alert.anomaly_score !== undefined && (
-              <span>Anomaly Score: {alert.anomaly_score.toFixed(2)}</span>
+              <span className="truncate">Anomaly: {alert.anomaly_score.toFixed(2)}</span>
             )}
           </div>
         )
@@ -242,52 +242,56 @@ const AlertCards = ({ student, studentId, isStale = false }: AlertCardsProps) =>
   return (
     <div className="flex flex-col h-full">
       <Card className="@container/card flex-1 flex flex-col relative overflow-hidden">
-        <CardHeader>
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <CardTitle className="flex items-center gap-2">
-            <TriangleAlert className="size-5 text-red-500" /> {/* Added icon here */}
-              Alerts
-              {unreadCount > 0 && (
-                <Badge variant="destructive" className="ml-2">
-                  {unreadCount}
-                </Badge>
-              )}
-            </CardTitle>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Select value={typeFilter} onValueChange={(value: "all" | "HIGH_HEART_RATE" | "HIGH_ACTIVITY" | "AI_ANOMALY") => setTypeFilter(value)}>
-                <SelectTrigger className="w-[110px] h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="HIGH_HEART_RATE">Heart Rate</SelectItem>
-                  <SelectItem value="HIGH_ACTIVITY">Activity</SelectItem>
-                  <SelectItem value="AI_ANOMALY">Anomaly</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={readFilter} onValueChange={(value: "unread" | "all") => setReadFilter(value)}>
-                <SelectTrigger className="w-[90px] h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unread">Unread</SelectItem>
-                  <SelectItem value="all">History</SelectItem>
-                </SelectContent>
-              </Select>
-              {!isAdmin && unreadCount > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 text-xs"
-                  onClick={markAllAsRead}
-                >
-                  <Check className="h-4 w-4 mr-1" />
-                </Button>
-              )}
+        <CardHeader className="flex-shrink-0 border-b pb-4">
+          <div className="flex flex-col @md:flex-row @md:items-start @md:justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="flex items-center gap-2">
+                <TriangleAlert className="size-5 text-red-500 flex-shrink-0" />
+                <span className="truncate">Alerts</span>
+                {unreadCount > 0 && (
+                  <Badge variant="destructive" className="ml-2 flex-shrink-0">
+                    {unreadCount}
+                  </Badge>
+                )}
+              </CardTitle>
+            </div>
+            <div className="flex-shrink-0 w-full @md:w-auto">
+              <div className="flex flex-col @sm:flex-row gap-2">
+                <Select value={typeFilter} onValueChange={(value: "all" | "HIGH_HEART_RATE" | "HIGH_ACTIVITY" | "AI_ANOMALY") => setTypeFilter(value)}>
+                  <SelectTrigger className="w-full @sm:w-[140px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="HIGH_HEART_RATE">Heart Rate</SelectItem>
+                    <SelectItem value="HIGH_ACTIVITY">Activity</SelectItem>
+                    <SelectItem value="AI_ANOMALY">Anomaly</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={readFilter} onValueChange={(value: "unread" | "all") => setReadFilter(value)}>
+                  <SelectTrigger className="w-full @sm:w-[120px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="unread">Unread</SelectItem>
+                    <SelectItem value="all">History</SelectItem>
+                  </SelectContent>
+                </Select>
+                {!isAdmin && unreadCount > 0 && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="w-full @sm:w-auto"
+                    onClick={markAllAsRead}
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="flex-1 overflow-hidden px-3 pb-3">
+        <CardContent className="flex-1 overflow-hidden px-3 @md:px-4 pb-3">
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <p className="text-sm text-muted-foreground">Loading alerts...</p>
@@ -313,13 +317,13 @@ const AlertCards = ({ student, studentId, isStale = false }: AlertCardsProps) =>
               </Empty>
             </div>
           ) : (
-            <ScrollArea className="h-full pr-3">
-              <div className="space-y-3">
+            <ScrollArea className="h-full pr-2 @md:pr-3">
+              <div className="space-y-2 @md:space-y-3">
                 {filteredAlerts.map((alert) => (
                   <div
                     key={alert.id}
                     className={cn(
-                      "rounded-lg border p-3 relative",
+                      "rounded-lg border p-2.5 @md:p-3 relative",
                       getSeverityColor(alert.severity),
                       !alert.is_read && "border-2"
                     )}
@@ -328,35 +332,36 @@ const AlertCards = ({ student, studentId, isStale = false }: AlertCardsProps) =>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="absolute top-2 right-2 h-7 px-2 text-xs"
+                        className="absolute top-1.5 right-1.5 @md:top-2 @md:right-2 h-6 w-6 @md:h-7 @md:w-auto @md:px-2 p-0 text-xs"
                         onClick={() => markAsRead(alert.id)}
                       >
-                        <Check className="h-3 w-3 mr-1" />
+                        <Check className="h-3 w-3" />
+                        <span className="hidden @md:inline @md:ml-1">Read</span>
                       </Button>
                     )}
-                    <div className={cn("flex items-start gap-2 pr-2")}>
-                      <div className="mt-0.5">
+                    <div className={cn("flex items-start gap-2 pr-8 @md:pr-2")}>
+                      <div className="mt-0.5 flex-shrink-0">
                         {getAlertIcon(alert.alert_type)}
                       </div>
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-semibold text-sm">{alert.title}</p>
-                          <Badge variant="outline" className="text-xs">
+                      <div className="flex-1 space-y-1 min-w-0">
+                        <div className="flex items-center gap-1.5 @md:gap-2 flex-wrap">
+                          <p className="font-semibold text-xs @md:text-sm">{alert.title}</p>
+                          <Badge variant="outline" className="text-[10px] @md:text-xs px-1.5 py-0">
                             {alert.severity}
                           </Badge>
                           {!alert.is_read && (
-                            <Badge variant="default" className="text-xs bg-blue-500">
+                            <Badge variant="default" className="text-[10px] @md:text-xs bg-blue-500 px-1.5 py-0">
                               New
                             </Badge>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground">{alert.message}</p>
-                        <div className="mt-2">
+                        <p className="text-[11px] @md:text-xs text-muted-foreground break-words">{alert.message}</p>
+                        <div className="mt-1.5 @md:mt-2">
                           {getAlertMetrics(alert)}
                         </div>
-                        <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
-                          <span>{formatDate(alert.created_at)}</span>
-                          <span>{formatTime(alert.created_at)}</span>
+                        <div className="flex items-center justify-between text-[10px] @md:text-xs text-muted-foreground mt-1.5 @md:mt-2">
+                          <span className="truncate">{formatDate(alert.created_at)}</span>
+                          <span className="flex-shrink-0 ml-2">{formatTime(alert.created_at)}</span>
                         </div>
                       </div>
                     </div>

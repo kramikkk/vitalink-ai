@@ -156,7 +156,7 @@ export function LoginForm({
         </CardContent>
       </Card>
       <FieldDescription className="px-6 text-center">
-        <span>IoT Health & Activity Dashboard for Students v1.0. © 2025 VitaLink AI. All rights reserved.</span>
+        <span>IoT Health & Activity Dashboard for Students v1.0. © 2026 VitaLink AI. All rights reserved.</span>
       </FieldDescription>
     </div>
   )

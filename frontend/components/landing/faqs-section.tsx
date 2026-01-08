@@ -51,13 +51,13 @@ export default function FAQs() {
                 <div className="flex flex-col gap-10 md:flex-row md:gap-16">
                     <div className="md:w-1/3">
                         <div className="sticky top-20">
-                            <h2 className="mt-4 text-5xl font-bold">Frequently Asked Questions</h2>
+                            <h2 className="mt-4 text-4xl md:text-5xl lg:text-6xl font-bold">Frequently Asked Questions</h2>
                             <p className="text-muted-foreground mt-4">
                                 Can't find what you're looking for? Contact our{' '}
                                 <Link
-                                    href="#"
+                                    href="#team"
                                     className="text-primary font-medium hover:underline">
-                                    customer support team
+                                    VitaLinkAI Team
                                 </Link>
                             </p>
                         </div>

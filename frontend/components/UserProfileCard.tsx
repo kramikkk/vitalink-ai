@@ -184,14 +184,50 @@ export default function UserProfileCard({ student, studentProfile }: UserProfile
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size must be less than 5MB')
+        return
+      }
+
       const reader = new FileReader()
       reader.onloadend = () => {
-        const imageUrl = reader.result as string
-        setPreviewImage(imageUrl)
-        setFormData(prev => ({
-          ...prev,
-          avatar_url: imageUrl
-        }))
+        const img = new Image()
+        img.onload = () => {
+          // Create canvas for cropping
+          const canvas = document.createElement('canvas')
+          const ctx = canvas.getContext('2d')
+
+          if (!ctx) return
+
+          // Determine the size of the square (use the smaller dimension)
+          const size = Math.min(img.width, img.height)
+
+          // Set canvas to square dimensions
+          canvas.width = size
+          canvas.height = size
+
+          // Calculate center crop coordinates
+          const startX = (img.width - size) / 2
+          const startY = (img.height - size) / 2
+
+          // Draw the center-cropped square image
+          ctx.drawImage(
+            img,
+            startX, startY, size, size,  // Source rectangle (center crop)
+            0, 0, size, size              // Destination rectangle (full canvas)
+          )
+
+          // Convert canvas to data URL
+          const croppedImageUrl = canvas.toDataURL('image/jpeg', 0.9)
+
+          setPreviewImage(croppedImageUrl)
+          setFormData(prev => ({
+            ...prev,
+            avatar_url: croppedImageUrl
+          }))
+        }
+        img.src = reader.result as string
       }
       reader.readAsDataURL(file)
     }
@@ -245,9 +281,10 @@ export default function UserProfileCard({ student, studentProfile }: UserProfile
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-4">
             <Avatar className="h-14 w-14">
-              <AvatarImage 
+              <AvatarImage
                 src={displayUser?.avatar_url || undefined}
-                alt="Student Avatar" 
+                alt="Student Avatar"
+                className="object-cover"
               />
               <AvatarFallback>{displayUser?.full_name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
             </Avatar>
@@ -270,15 +307,15 @@ export default function UserProfileCard({ student, studentProfile }: UserProfile
                 <Edit className="h-4 w-4" />
               </Button>
             </SheetTrigger>
-            <SheetContent className="w-[400px] sm:w-[540px] p-0 flex flex-col">
-              <SheetHeader className="px-6 pt-6 pb-4 flex-shrink-0">
-                <SheetTitle className='text-2xl'>Edit Profile</SheetTitle>
-                <SheetDescription>
+            <SheetContent className="w-full sm:w-[400px] md:w-[540px] p-0 flex flex-col">
+              <SheetHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 flex-shrink-0">
+                <SheetTitle className='text-xl sm:text-2xl'>Edit Profile</SheetTitle>
+                <SheetDescription className="text-sm">
                   Update your personal information.
                 </SheetDescription>
               </SheetHeader>
-              <div className="flex-1 overflow-y-auto px-6">
-              <div className="grid gap-4">
+              <div className="flex-1 overflow-y-auto px-4 sm:px-6">
+              <div className="grid gap-3 sm:gap-4">
                 {/* Profile Photo Section */}
                 <div className="grid gap-2">
                   <Label className="text-center">Profile Photo</Label>
@@ -288,7 +325,7 @@ export default function UserProfileCard({ student, studentProfile }: UserProfile
                       onClick={triggerFileInput}
                     >
                       <Avatar className="h-32 w-32 ring-2 ring-offset-2 ring-primary/20 transition-all group-hover:ring-primary/40">
-                        <AvatarImage src={previewImage} alt="Preview" />
+                        <AvatarImage src={previewImage} alt="Preview" className="object-cover" />
                         <AvatarFallback className="text-2xl">
                           {(studentProfile || user)?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
                         </AvatarFallback>

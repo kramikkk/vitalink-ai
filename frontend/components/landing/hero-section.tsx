@@ -71,48 +71,6 @@ export default function HeroSection() {
                 </div>
                 <section id="home">
                     <div className="relative pt-24 md:pt-36">
-                        <AnimatedGroup
-                            variants={{
-                                container: {
-                                    visible: {
-                                        transition: {
-                                            delayChildren: 1,
-                                        },
-                                    },
-                                },
-                                item: {
-                                    hidden: {
-                                        opacity: 0,
-                                        y: 20,
-                                    },
-                                    visible: {
-                                        opacity: 1,
-                                        y: 0,
-                                        transition: {
-                                            type: 'spring' as const,
-                                            bounce: 0.3,
-                                            duration: 2,
-                                        },
-                                    },
-                                },
-                            }}
-                            className="mask-b-from-35% mask-b-to-90% absolute inset-0 top-56 -z-20 lg:top-32">
-                            <Image
-                                src="/"
-                                alt="background"
-                                className="hidden size-full dark:block"
-                                width="3276"
-                                height="4095"
-                            />
-                            <Image
-                                src="/"
-                                alt="background"
-                                className="hidden size-full dark:hidden"
-                                width="3276"
-                                height="4095"
-                            />
-                        </AnimatedGroup>
-
                         <div
                             aria-hidden
                             className="absolute inset-0 -z-10 size-full [background:radial-gradient(125%_125%_at_50%_100%,transparent_0%,var(--color-background)_75%)]"
@@ -208,17 +166,17 @@ export default function HeroSection() {
                                 },
                                 ...transitionVariants,
                             }}>
-                            <div className="mask-b-from-55% relative -mr-56 mt-8 overflow-hidden px-2 sm:mr-0 sm:mt-12 md:mt-20">
-                                <div className="inset-shadow-2xs ring-background dark:inset-shadow-white/20 bg-background relative mx-auto max-w-6xl overflow-hidden rounded-2xl border p-4 shadow-lg shadow-zinc-950/15 ring-1">
+                            <div className="mask-b-from-55% relative mt-8 overflow-hidden px-2 sm:px-4 sm:mt-12 md:mt-20 md:px-6">
+                                <div className="inset-shadow-2xs ring-background dark:inset-shadow-white/20 bg-background relative mx-auto w-full max-w-6xl overflow-hidden rounded-xl p-2 shadow-lg shadow-zinc-950/15 ring-1 sm:rounded-2xl sm:p-4">
                                     <Image
-                                        className="bg-background aspect-15/8 relative hidden rounded-2xl dark:block"
+                                        className="bg-background aspect-video sm:aspect-15/8 relative hidden w-full h-auto rounded-lg sm:rounded-2xl dark:block"
                                         src="/VitaLinkAI_Dashboard_Dark.png"
                                         alt="app screen"
                                         width="2700"
                                         height="1440"
                                     />
                                     <Image
-                                        className="z-2 border-border/25 aspect-15/8 relative rounded-2xl border dark:hidden"
+                                        className="z-2 border-border/25 aspect-video sm:aspect-15/8 relative w-full h-auto rounded-lg border sm:rounded-2xl dark:hidden"
                                         src="/VitaLinkAI_Dashboard_Light.png"
                                         alt="app screen"
                                         width="2700"

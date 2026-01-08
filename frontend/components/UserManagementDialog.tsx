@@ -236,7 +236,7 @@ export function UserManagementDialog({ open, onOpenChange }: UserManagementDialo
   const UserCard = ({ user }: { user: UserProfile }) => (
     <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors group">
       <Avatar className="h-10 w-10">
-        <AvatarImage src={user.avatar_url || undefined} />
+        <AvatarImage src={user.avatar_url || undefined} className="object-cover" />
         <AvatarFallback>
           {user.full_name.split(' ').map(n => n[0]).join('')}
         </AvatarFallback>
@@ -255,7 +255,7 @@ export function UserManagementDialog({ open, onOpenChange }: UserManagementDialo
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+          className="h-8 w-8 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
           onClick={() => handleDeleteClick(user)}
         >
           <Trash2 className="h-4 w-4" />

@@ -93,6 +93,9 @@ export const authApi = {
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('Unauthorized - Token expired or invalid');
+      }
       throw new Error('Failed to fetch user profile');
     }
 
@@ -172,8 +175,8 @@ export const tokenManager = {
   setToken(token: string) {
     if (typeof window !== 'undefined') {
       localStorage.setItem('access_token', token);
-      // Set expiration time (30 minutes from now)
-      const expiresAt = Date.now() + 30 * 60 * 1000;
+      // Set expiration time (60 minutes from now - matching backend)
+      const expiresAt = Date.now() + 60 * 60 * 1000;
       localStorage.setItem('token_expires_at', expiresAt.toString());
     }
   },
@@ -181,14 +184,8 @@ export const tokenManager = {
   getToken(): string | null {
     if (typeof window !== 'undefined') {
       const token = localStorage.getItem('access_token');
-      const expiresAt = localStorage.getItem('token_expires_at');
-
-      // Check if token is expired
-      if (token && expiresAt && Date.now() >= parseInt(expiresAt)) {
-        this.removeToken();
-        return null;
-      }
-
+      // Simply return the token without checking expiration
+      // Let the backend handle token validation
       return token;
     }
     return null;

@@ -27,9 +27,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
     try {
       const userData = await authApi.getCurrentUser(token)
       setUser(userData)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch user:', error)
-      tokenManager.removeToken()
+      // Only remove token if it's an authentication error (401)
+      // This indicates the token is actually expired or invalid
+      if (error.message?.includes('401') || error.message?.includes('Unauthorized') || error.message?.includes('profile')) {
+        tokenManager.removeToken()
+      }
       setUser(null)
     } finally {
       setIsLoading(false)

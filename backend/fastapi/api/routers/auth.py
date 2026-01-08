@@ -5,7 +5,7 @@ from datetime import timedelta
 from database import get_db
 from models_db import User
 from models import UserLogin, Token, UserRole
-from utils.auth_utils import hash_password, verify_password, create_access_token, get_current_user, require_role
+from utils.auth_utils import hash_password, verify_password, create_access_token, get_current_user, require_role, ACCESS_TOKEN_EXPIRE_MINUTES
 
 router = APIRouter(tags=["Authentication"])
 
@@ -65,7 +65,7 @@ def signup(user: SignupRequest, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=500, detail="Failed to create user")
 
-    access_token_expires = timedelta(minutes=30)
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": str(new_user.id)}, expires_delta=access_token_expires
     )
@@ -88,7 +88,7 @@ def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
             detail="Invalid email or password"
         )
 
-    access_token_expires = timedelta(minutes=30)
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": str(user.id)}, expires_delta=access_token_expires
     )
@@ -118,7 +118,7 @@ def refresh_token(current_user: User = Depends(get_current_user)):
     Refresh the access token for the current user.
     Requires valid existing token.
     """
-    access_token_expires = timedelta(minutes=30)
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": str(current_user.id)}, expires_delta=access_token_expires
     )

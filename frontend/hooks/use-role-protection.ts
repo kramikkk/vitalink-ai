@@ -35,10 +35,14 @@ export function useRoleProtection(allowedRoles: UserRole[]) {
           // Role is valid, update localStorage to match backend
           tokenManager.setRole(user.role as UserRole)
         }
-      } catch (error) {
-        // Token invalid or expired
-        tokenManager.logout()
-        router.push('/login')
+      } catch (error: any) {
+        console.error('[RoleProtection] Error:', error)
+        // Only logout on authentication errors (401), not network errors
+        if (error.message?.includes('Unauthorized') || error.message?.includes('401')) {
+          tokenManager.logout()
+          router.push('/login')
+        }
+        // For network errors, stay logged in - user will see offline state
       } finally {
         setIsVerifying(false)
       }
@@ -71,9 +75,13 @@ export function useAuthRedirect() {
         if (tokenManager.isTokenExpiringSoon()) {
           await tokenManager.refreshToken()
         }
-      } catch (error) {
-        tokenManager.logout()
-        router.push('/login')
+      } catch (error: any) {
+        console.error('[AuthRedirect] Error:', error)
+        // Only logout on authentication errors (401), not network errors
+        if (error.message?.includes('Unauthorized') || error.message?.includes('401')) {
+          tokenManager.logout()
+          router.push('/login')
+        }
       } finally {
         setIsVerifying(false)
       }
@@ -81,7 +89,7 @@ export function useAuthRedirect() {
 
     verifyAuth()
 
-    // Set up automatic token refresh every 25 minutes
+    // Set up automatic token refresh every 50 minutes (for 60-minute tokens)
     const refreshInterval = setInterval(async () => {
       if (tokenManager.isTokenExpiringSoon()) {
         const refreshed = await tokenManager.refreshToken()
@@ -90,7 +98,7 @@ export function useAuthRedirect() {
           router.push('/login')
         }
       }
-    }, 25 * 60 * 1000) // 25 minutes
+    }, 50 * 60 * 1000) // 50 minutes
 
     return () => clearInterval(refreshInterval)
   }, [router])

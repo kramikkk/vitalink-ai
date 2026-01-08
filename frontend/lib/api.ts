@@ -223,9 +223,9 @@ export const tokenManager = {
     const expiresAt = localStorage.getItem('token_expires_at');
     if (!expiresAt) return false;
 
-    // Check if token expires in less than 5 minutes
-    const fiveMinutes = 5 * 60 * 1000;
-    return Date.now() >= parseInt(expiresAt) - fiveMinutes;
+    // Check if token expires in less than 10 minutes (for 60-minute tokens, refresh at 50 minutes)
+    const tenMinutes = 10 * 60 * 1000;
+    return Date.now() >= parseInt(expiresAt) - tenMinutes;
   },
 
   async refreshToken(): Promise<boolean> {

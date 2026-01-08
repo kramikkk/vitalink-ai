@@ -28,11 +28,14 @@ export function UserProvider({ children }: { children: ReactNode }) {
       const userData = await authApi.getCurrentUser(token)
       setUser(userData)
     } catch (error: any) {
-      console.error('Failed to fetch user:', error)
-      // Only remove token if it's an authentication error (401)
-      // This indicates the token is actually expired or invalid
-      if (error.message?.includes('401') || error.message?.includes('Unauthorized') || error.message?.includes('profile')) {
+      console.error('[UserContext] Failed to fetch user:', error)
+      // Only remove token if it's an authentication error (401/Unauthorized)
+      // Don't remove on network errors or the generic "Failed to fetch user profile" message
+      if (error.message?.includes('Unauthorized') || error.message?.includes('401')) {
+        console.log('[UserContext] Auth error - removing token')
         tokenManager.removeToken()
+      } else {
+        console.log('[UserContext] Non-auth error - keeping token')
       }
       setUser(null)
     } finally {

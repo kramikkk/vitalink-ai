@@ -58,6 +58,19 @@ Here’s the overall system flow of the project:
 
 ---
 
+## 🔌 Device
+
+Photos of the physical hardware setup:
+
+<p align="center">
+  <img src="./docs/Device1.JPG" alt="Device 1" width="200">
+  <img src="./docs/Device2.JPG" alt="Device 2" width="200">
+  <img src="./docs/Device3.JPG" alt="Device 3" width="200">
+  <img src="./docs/Device4.JPG" alt="Device 4" width="200">
+</p>
+
+---
+
 ## 👨‍💻 Contributors
 - *Exconde, Mark Jeric B.* 
 - *Flores, Zyra Mae G.*  
